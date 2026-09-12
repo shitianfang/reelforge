@@ -9,6 +9,9 @@
   /* --faint is the floor for 11–12px labels: 5.2:1 on white. --faint-deco is
      below the text floor and may only carry pure decoration (chevrons). */
   --bg:#ffffff; --fg:#111114; --fg-2:#3f3f46; --muted:#71717a; --faint:#6b6b76;
+  /* --muted-2 is --muted's twin for text on a tinted (never white) ground:
+     #71717a on #f5f5f6 is only 4.44:1, this is 5.8:1 */
+  --muted-2:#5f5f6a;
   --faint-deco:#a1a1aa; --ph:#8e8e96; --ph-strong:#7c7c85;
   --line:#e7e7ea; --line-2:#f1f1f3; --surface:#fafafa; --surface-2:#f5f5f6;
   --accent:#4f46e5; --accent-weak:#eef0ff; --accent-line:#dfdefb;
@@ -68,8 +71,9 @@ h2{font-size:14px;font-weight:620}
 .balchip .k{font-size:11px;color:var(--faint);letter-spacing:.04em}
 .balchip .v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 .meter{width:52px;height:4px;border-radius:999px;background:var(--line);overflow:hidden}
-/* a sub-pixel fill renders as a speck: floor it, and hide it outright at 0 */
-.meter i{display:block;height:100%;width:0;min-width:4px;border-radius:999px;
+/* no min-width: a floored sub-1% fill paints a purple speck that reads as
+   debris, so below 1% the fill is hidden outright and the number does the talking */
+.meter i{display:block;height:100%;width:0;border-radius:999px;
          background:var(--accent);transition:width 300ms ease}
 .meter.warn i{background:#d97706}.meter.bad i{background:var(--bad)}
 .iconbtn{width:30px;height:30px;border-radius:999px;border:1px solid var(--line);
@@ -122,7 +126,7 @@ select{appearance:none;-webkit-appearance:none;padding-right:28px;cursor:pointer
 .btn.tiny{padding:4px 9px;font-size:12px}
 .seg{display:inline-flex;background:var(--surface-2);border-radius:9px;padding:3px;gap:2px}
 .seg button{border:0;background:none;cursor:pointer;padding:5px 16px;border-radius:7px;
-            font-size:13px;color:var(--muted);transition:all var(--t)}
+            font-size:13px;color:var(--muted-2);transition:all var(--t)}
 .seg button:hover{color:var(--fg)}
 .seg button.on{background:#fff;color:var(--fg);font-weight:560;
                box-shadow:0 1px 2px rgba(17,17,20,.08)}
@@ -163,6 +167,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
 /* background-color, never the shorthand — the shorthand wipes the select arrow */
 .pgroup select,.pgroup input{background-color:#fff}
 .pgroup input[type=number]{width:66px}
+#srcwrap{display:inline-flex;align-items:center;gap:8px}
 .srcchip{display:inline-flex;align-items:center;gap:7px;background:#fff;
          border:1px solid var(--accent-line);border-radius:999px;padding:3px 5px 3px 4px;
          font-size:12px;color:var(--accent)}
@@ -170,6 +175,16 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .srcchip button{border:0;background:none;cursor:pointer;color:var(--accent);opacity:.65;
                 padding:0 4px;font-size:13px;line-height:1}
 .srcchip button:hover{opacity:1}
+/* 从图片生成 needs an entry point inside the 视频 params, not only the hover
+   action on a result tile: this strip picks a source image from recent results */
+.srcpick{flex:1 0 100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+         margin-top:2px;padding-top:10px;border-top:1px dashed var(--line)}
+.srcrow{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 auto;min-width:0}
+.srcthumb{padding:0;border:1px solid var(--line);border-radius:7px;overflow:hidden;
+          background:#fff;cursor:pointer;line-height:0;transition:all var(--t)}
+.srcthumb img{width:42px;height:56px;object-fit:cover}
+.srcthumb:hover{border-color:#c9c9d1;box-shadow:var(--sh)}
+.srcthumb.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,70,229,.26)}
 .composer-foot{display:flex;align-items:center;gap:14px;margin-top:16px;
                padding-top:16px;border-top:1px solid var(--line-2);flex-wrap:wrap}
 .est{font-size:13px;color:var(--muted)}
@@ -180,6 +195,9 @@ details[open]>summary .chev{transform:rotate(45deg)}
 
 /* ---------- tiles ---------- */
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:16px}
+/* one or two results stretched to 1fr looked like a layout accident —
+   few tiles sit in fixed 240px columns, left-aligned, on purpose */
+.tiles.few{grid-template-columns:repeat(auto-fill,240px);justify-content:start}
 .tile{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;
       transition:box-shadow var(--t),border-color var(--t)}
 .tile:hover{box-shadow:0 6px 20px rgba(17,17,20,.09);border-color:#dedee3}
@@ -190,7 +208,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .tile-media.audio .note{font-size:22px;color:var(--accent);opacity:.55}
 .tile-acts{position:absolute;left:0;right:0;bottom:0;padding:8px;display:flex;gap:6px;
            background:linear-gradient(transparent,rgba(17,17,20,.55));
-           opacity:0;transition:opacity var(--t)}
+           opacity:0;transition:opacity var(--t);z-index:4}
 .tile:hover .tile-acts,.tile:focus-within .tile-acts{opacity:1}
 .tile-acts .btn{background:rgba(255,255,255,.96);border-color:transparent;
                 backdrop-filter:blur(6px);font-size:12px;padding:4px 10px;
@@ -220,17 +238,19 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .chip.fail{background:var(--bad-bg);color:var(--bad);border-color:#f6dedb}
 .chip.wait{background:var(--warn-bg);color:var(--warn);border-color:#f7e7c6}
 .chip.plain{background:var(--surface-2);color:var(--muted);border-color:var(--line-2)}
+/* 档位 is ONE ordinal axis (cheap → flagship), so it gets one ramp of rising
+   indigo intensity — five unrelated hues read as five unrelated meanings, and
+   green/amber/red stay reserved for done/waiting/failed. */
 .tier{font-size:11px;padding:1px 7px;border-radius:5px;font-weight:600;
-      letter-spacing:.02em;background:var(--surface-2);color:var(--muted);
+      letter-spacing:.02em;background:var(--surface-2);color:var(--muted-2);
       white-space:nowrap;flex:none;line-height:1.65}
-.tier.t1{background:#f0fdf4;color:var(--ok)}
-.tier.t2{background:var(--accent-weak);color:#4338ca}
-.tier.t3{background:#fdf2f8;color:#a21561}
-.tier.t4{background:#fffbeb;color:#b45309}
+.tier.r1{background:var(--surface-2);color:var(--muted-2)}
+.tier.r2{background:var(--accent-weak);color:#4338ca}
+.tier.r3{background:#d5d8fa;color:#312e81}
+.tier.r4{background:#4338ca;color:#fff}
+/* 性价比王 is not a step on that axis — it is the one award, outlined */
+.tier.val{background:#fff;color:#4338ca;box-shadow:inset 0 0 0 1px var(--accent-line)}
 .tier.only{background:#fff;color:var(--muted);border:1px dashed #d4d4d8;padding:0 6px}
-/* what the badge hues mean — without it they are just decoration */
-.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
-.lgd{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 
 /* ---------- table ---------- */
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
@@ -296,9 +316,37 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .mediarow .subhead{margin-top:0}
 .mediarow .m-audio{flex:1 1 280px;min-width:240px;max-width:420px}
 .player{display:block;width:fit-content;max-width:100%;border-radius:10px;
-        border:1px solid var(--line);overflow:hidden;background:#000;line-height:0}
+        border:1px solid var(--line);overflow:hidden;background:#fff}
 .player video{height:400px;max-height:56vh;width:auto;max-width:100%;display:block;
               object-fit:contain;background:#000}
+
+/* video: the same outlined light chrome as .aplayer. The native controls bar is
+   dark, Material-icon'd and 40px away from our own player — one design language
+   or none, so native controls are off everywhere and this is the control. */
+.vplayer{position:relative;line-height:0}
+.vp-stage{position:relative;background:#000;line-height:0}
+.vp-play{position:absolute;left:50%;top:50%;margin:0;width:52px;height:52px;
+         transform:translate(-50%,-50%);border:0;border-radius:50%;cursor:pointer;
+         background:rgba(17,17,20,.58);color:#fff;display:grid;place-items:center;
+         backdrop-filter:blur(3px);transition:opacity var(--t),background var(--t)}
+.vp-play svg{transform:scale(2.1)}
+.vp-play:hover{background:rgba(17,17,20,.78)}
+/* playing: the overlay gets out of the way, and comes back on hover as pause */
+.vplayer.playing .vp-play{opacity:0;pointer-events:none}
+.vplayer.playing:hover .vp-play{opacity:.92;pointer-events:auto}
+.vpbar{display:flex;align-items:center;gap:12px;height:42px;padding:0 12px;
+       background:#fff;border-top:1px solid var(--line-2)}
+.tilevp,.tilevp video{width:100%;height:100%}
+.tilevp video{object-fit:cover}
+.tilevp .vp-play{width:40px;height:40px}
+.tilevp .vp-play svg{transform:scale(1.6)}
+/* a tile has no room for a control row: the progress line is the whole chrome.
+   Its grab area stays thin and the tile actions stay above it — a 14px skirt
+   (the audio default) swallowed clicks aimed at 下载. */
+.vp-line{position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:0;
+         background:rgba(255,255,255,.34);z-index:3}
+.vplayer .vp-line::after{inset:-3px 0}
+.vp-line i{border-radius:0}
 
 /* audio: one custom control, used in the job detail and in music tiles */
 .aplayer{display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;
@@ -349,9 +397,10 @@ details[open]>summary .chev{transform:rotate(45deg)}
             display:grid;gap:8px}
 .mline{display:grid;grid-template-columns:38px 1fr;gap:10px;font-size:12.5px;
        line-height:1.65;color:var(--fg-2)}
-.mline .k{font-size:11px;font-weight:600;color:var(--faint);letter-spacing:.04em;
+/* 优点 / 缺点 / 用法 are labels, not statuses: red 缺点 read as an error state.
+   The label carries the meaning; the colour carries none. */
+.mline .k{font-size:11px;font-weight:700;color:var(--fg-2);letter-spacing:.04em;
           padding-top:2px}
-.mline .k.p{color:var(--ok)}.mline .k.c{color:var(--bad)}.mline .k.u{color:var(--accent)}
 .endpoint{display:inline-block;font-size:11.5px;color:var(--muted);margin-top:2px;
           overflow-wrap:anywhere;text-decoration:none}
 .endpoint:hover{color:var(--accent);text-decoration:underline}
@@ -364,19 +413,25 @@ details[open]>summary .chev{transform:rotate(45deg)}
       background:#fff}
 .stat .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
          font-weight:600}
+/* "fal" is a brand in lower case: uppercasing it made the same field read
+   "FAL 余额" here and "fal 余额" in the nav chip */
+.stat .k.lc{text-transform:none}
 .stat .v{font-size:18px;font-weight:640;margin-top:6px;font-variant-numeric:tabular-nums;
          letter-spacing:-.015em}
 .stat .n{font-size:12.5px;color:var(--muted);margin-top:3px}
 .bigbar{height:6px;border-radius:999px;background:var(--line-2);overflow:hidden;
         margin-top:12px}
-.bigbar i{display:block;height:100%;min-width:6px;border-radius:999px;
+.bigbar i{display:block;height:100%;border-radius:999px;
           background:var(--accent);transition:width 300ms ease}
 .bigbar.warn i{background:#d97706}.bigbar.bad i{background:var(--bad)}
-/* the cap group and the price table share one 520px measure so they align */
-.capgroup,.pricetbl{max-width:520px}
-.pricetbl td{padding:9px 0}
-.pricetbl td:first-child{color:var(--muted)}
-.pricetbl td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+/* everything in 额度 measures to the card, not to a 520px ghost column: the
+   bar spans its card and the price rows flow into as many columns as fit */
+.pricegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));
+           gap:0 28px;margin-top:2px}
+.prow{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+      font-size:13px;padding:9px 0;border-bottom:1px solid var(--line-2)}
+.prow .k{color:var(--muted)}
+.prow .v{font-variant-numeric:tabular-nums;white-space:nowrap}
 
 /* ---------- drawer + toasts ---------- */
 .scrim{position:fixed;inset:0;background:rgba(17,17,20,.32);z-index:50;
@@ -424,6 +479,28 @@ details[open]>summary .chev{transform:rotate(45deg)}
               line-height:1.5}
   .mediarow{gap:14px}
   .player video{height:320px}
+  /* a 9-column, 522px-wide table inside a 388px scroller is not a table any
+     more: one card per job, with the three things a phone reader needs */
+  .jobstbl thead{display:none}
+  .jobstbl,.jobstbl tbody{display:block}
+  .jobstbl tr{display:grid;grid-template-columns:1fr auto;gap:3px 10px;
+              align-items:center;padding:12px 14px;
+              border-bottom:1px solid var(--line-2)}
+  .jobstbl tr:last-child{border-bottom:0}
+  .jobstbl td{display:block;padding:0;border:0;text-align:left}
+  .jobstbl td.c-flow,.jobstbl td.c-style,
+  .jobstbl td.c-budget,.jobstbl td.c-est{display:none}
+  .jobstbl td.c-name{order:1;font-size:14px}
+  .jobstbl td.c-status{order:2;justify-self:end}
+  .jobstbl td.c-prog{order:3;color:var(--muted)}
+  .jobstbl td.c-cost{order:4;justify-self:end}
+  /* the connectors have nothing to connect once the chain wraps — a stranded
+     22px bar at a line start read as a rendering bug */
+  .steps{gap:7px 12px}
+  .step-bar{display:none}
+  /* three stats in two columns strand the third at half width */
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats>.stat:last-child{grid-column:1/-1}
 }
 </style>
 </head>
@@ -523,6 +600,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
           <input type="text" id="lyrics" placeholder="歌词（留空为纯音乐）"
                  style="flex:1;min-width:180px;margin-left:6px">
         </div>
+        <div class="srcpick" id="srcstrip" hidden></div>
       </div>
 
       <div class="composer-foot">
@@ -550,8 +628,8 @@ details[open]>summary .chev{transform:rotate(45deg)}
   <section class="view" id="view-library" hidden>
     <div class="view-head">
       <h1>模型库</h1>
-      <p class="sub">按用途分组，点卡片看优缺点与用法。</p>
-      <div class="legend" id="tierlegend"></div>
+      <p class="sub">按用途分组，点卡片看优缺点与用法。<br>
+        档位 = 价格与质量档次，由浅到深从草稿档到旗舰档，不代表状态；把鼠标停在徽章上看说明。</p>
     </div>
     <div id="library"></div>
   </section>
@@ -564,7 +642,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
     </div>
     <div class="stats" id="quotastats"></div>
     <div class="card pad" style="margin-top:16px">
-      <div class="capgroup">
+      <div>
         <div class="lbl">总额度上限</div>
         <div class="row" style="margin-top:10px">
           <input type="number" id="cap" step="0.5" min="0" style="width:120px">
@@ -578,7 +656,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
     </div>
     <div class="card pad" style="margin-top:16px">
       <div class="lbl">价格表</div>
-      <table class="tbl pricetbl" style="margin-top:6px" id="prices"></table>
+      <div class="pricegrid" id="prices"></div>
     </div>
   </section>
 </main>
@@ -594,28 +672,30 @@ details[open]>summary .chev{transform:rotate(45deg)}
   <div class="drawer-body guide">
     <h3>三步上手</h3>
     <ol>
-      <li>在<b>创作</b>选「图片」，写一句提示词——不会写就展开<b>套用风格模板</b>，
+      <li>在<b>创作</b>里选图片，写一句提示词——不会写就展开<b>套用风格模板</b>，
           填主体 / 动作 / 场景，自动拼成专业提示词。一张草稿几分钱，多生几张挑。</li>
-      <li>图满意了，鼠标移到图上点<b>用这张生视频</b>：先 480P + 4~5 秒试（不到两毛五），
-          满意再换 768P 出正式版。</li>
+      <li>图满意了就让它动起来：把鼠标移到图上点<b>用这张生视频</b>，
+          或切到<b>视频</b>后在参数栏点<b>参考图</b>挑一张。
+          先用 480P + 4–5 秒试一版，大约两毛多，满意再换 768P 出正式版。</li>
       <li>想要带配乐、卡点剪辑的成片：让 Claude Code 跑 <b>reelforge run</b>，
           回<b>任务</b>看进度、选关键帧、看成片。</li>
     </ol>
     <h3>花钱规则</h3>
     <div class="kv">生成前页面一定先显示<b>预计花费</b>；所有消费都走同一个总额度上限，
       超了会被直接拒绝，不会偷偷扣钱。</div>
-    <div class="kv">顶部余额是 fal 账户实时余额（约 30 秒刷新一次），
-      进度条是「已花 / 上限」。</div>
+    <div class="kv">顶部的 fal 余额是账户实时余额，约 30 秒刷新一次；
+      旁边的进度条是「已花 / 上限」。</div>
     <h3>提示词技巧</h3>
     <ul>
-      <li>写具体：<b>主体是什么</b> + <b>光从哪来</b>（硬光 / 逆光轮廓光）+
-          <b>什么颜色撞什么颜色</b> + <b>什么镜头</b>（35mm / 微距）。</li>
+      <li>写具体：<b>主体是什么</b> + <b>光从哪来</b>，硬光还是逆光轮廓光 +
+          <b>什么颜色撞什么颜色</b> + <b>什么镜头</b>，例如 35mm 或微距。</li>
       <li>别写「好看的氛围感」这类虚词，模板已经把这些打包好了。</li>
       <li>做系列时主体描述一字不改，主角才不会走样。</li>
     </ul>
     <h3>名词解释</h3>
     <div class="kv"><b>文生视频</b>　一句话直接出视频，快，但画面不可控。</div>
-    <div class="kv"><b>从图片生成</b>　先挑一张满意的图再让它动起来，可控，正经做内容走这条。</div>
+    <div class="kv"><b>从图片生成</b>　先挑一张满意的图再让它动起来，可控，正经做内容走这条；
+      入口是视频参数栏的<b>参考图</b>，或结果图上的<b>用这张生视频</b>。</div>
     <div class="kv"><b>关键帧</b>　每个镜头的第一帧，你选中的那张决定这个镜头长什么样。</div>
     <div class="kv"><b>drop</b>　音乐情绪最高点，批量任务会把最炸的镜头切在这里。</div>
   </div>
@@ -631,6 +711,7 @@ var openJob = null;
 var jobDetail = null;
 var logOpen = false;
 var sourceImage = null;
+var srcOpen = false;          // 参考图 picker strip open in the 视频 params
 var submitting = false;
 var expanded = {};            // model id -> open in library
 var picks = {};               // shot index -> candidate index
@@ -643,8 +724,9 @@ var esc = function (s) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
   });
 };
+var DASH = '<span class="dim">—</span>';   // one no-value glyph, one colour
 var money = function (v) {
-  if (v == null || isNaN(v)) return "–";
+  if (v == null || isNaN(v)) return "—";
   var n = +v;
   if (n >= 0.1 || n === 0) return "$" + n.toFixed(2);
   return "$" + n.toFixed(4).replace(/(\.\d\d[1-9]?)0+$/, "$1");
@@ -661,11 +743,14 @@ function paint(key, s, el, html) {
   el.innerHTML = html;
   return true;
 }
-/* ---------------- audio player ----------------
-   One control for every sound on the page (job 配乐, music results): the native
-   <audio> chrome does not match anything else here. The <audio> node stays in
-   the DOM on purpose — removing it from the document pauses playback, so a
-   re-render can never leave an invisible track playing. */
+/* ---------------- media player ----------------
+   One control for every sound AND every video on the page (job 配乐 + 成片,
+   playground results): native <audio>/<video> chrome is a dark Material bar
+   that matches nothing else here, and sitting 40px from our own player it read
+   as two different products. Same markup vocabulary for both — .ap-btn /
+   .ap-track / .ap-time — so one wiring function drives them all. The media node
+   stays in the DOM on purpose: removing it from the document pauses playback,
+   so a re-render can never leave an invisible track playing. */
 var PLAY_SVG = '<svg width="9" height="10" viewBox="0 0 9 10" aria-hidden="true"' +
   ' style="margin-left:1px"><path d="M0 0l9 5-9 5z" fill="currentColor"/></svg>';
 var PAUSE_SVG = '<svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true">' +
@@ -683,36 +768,60 @@ function audioPlayer(src, mini) {
     '<span class="ap-time">0:00 / --:--</span>' +
     '<audio src="' + esc(src) + '" preload="metadata"></audio></div>';
 }
+/* tile = the cramped variant: overlay button + a 3px progress line, no row */
+function videoPlayer(src, tile) {
+  var v = '<video src="' + esc(src) + '" preload="metadata" playsinline></video>';
+  var overlay = '<button class="ap-btn vp-play" type="button" aria-label="播放">' +
+    PLAY_SVG + "</button>";
+  if (tile)
+    return '<div class="vplayer tilevp">' + v + overlay +
+      '<div class="ap-track vp-line"><i></i></div></div>';
+  return '<div class="vplayer"><div class="vp-stage">' + v + overlay + "</div>" +
+    '<div class="vpbar"><button class="ap-btn" type="button" aria-label="播放">' +
+    PLAY_SVG + '</button><div class="ap-track"><i></i></div>' +
+    '<span class="ap-time">0:00 / --:--</span></div></div>';
+}
 function initPlayers() {
-  var list = document.querySelectorAll(".aplayer:not([data-ready])");
+  var list = document.querySelectorAll(
+    ".aplayer:not([data-ready]),.vplayer:not([data-ready])");
   for (var i = 0; i < list.length; i++) wirePlayer(list[i]);
 }
 function wirePlayer(el) {
   el.setAttribute("data-ready", "1");
-  var a = el.querySelector("audio"), btn = el.querySelector(".ap-btn");
-  var track = el.querySelector(".ap-track"), fill = track.firstElementChild;
+  var a = el.querySelector("audio,video");
+  var btns = el.querySelectorAll(".ap-btn");   // overlay + row share one toggle
+  var track = el.querySelector(".ap-track");
+  var fill = track ? track.firstElementChild : null;
   var time = el.querySelector(".ap-time");
   function draw() {
     var d = isFinite(a.duration) ? a.duration : 0;
-    fill.style.width = d ? (a.currentTime / d * 100).toFixed(2) + "%" : "0";
-    time.textContent = fmtTime(a.currentTime) + " / " + (d ? fmtTime(d) : "--:--");
+    if (fill) fill.style.width = d ? (a.currentTime / d * 100).toFixed(2) + "%" : "0";
+    if (time)
+      time.textContent = fmtTime(a.currentTime) + " / " + (d ? fmtTime(d) : "--:--");
   }
-  btn.addEventListener("click", function () {
+  function icon(svg, label) {
+    for (var j = 0; j < btns.length; j++) {
+      btns[j].innerHTML = svg; btns[j].setAttribute("aria-label", label);
+    }
+  }
+  function toggle() {
     if (a.paused) {
       var p = a.play();
       if (p && p.catch) p.catch(function (e) { toast("播放失败", e.message); });
     } else a.pause();
-  });
+  }
+  for (var i = 0; i < btns.length; i++) btns[i].addEventListener("click", toggle);
+  if (a.tagName === "VIDEO") a.addEventListener("click", toggle);
   a.addEventListener("play", function () {
-    btn.innerHTML = PAUSE_SVG; btn.setAttribute("aria-label", "暂停");
+    el.classList.add("playing"); icon(PAUSE_SVG, "暂停");
   });
   a.addEventListener("pause", function () {
-    btn.innerHTML = PLAY_SVG; btn.setAttribute("aria-label", "播放");
+    el.classList.remove("playing"); icon(PLAY_SVG, "播放");
   });
   a.addEventListener("timeupdate", draw);
   a.addEventListener("loadedmetadata", draw);
   a.addEventListener("ended", function () { a.currentTime = 0; draw(); });
-  track.addEventListener("click", function (ev) {
+  if (track) track.addEventListener("click", function (ev) {
     if (!isFinite(a.duration) || !a.duration) return;
     var r = track.getBoundingClientRect();
     var f = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
@@ -780,6 +889,22 @@ function vidMode(m) {
   if (t2v && !i2v) return { needs: false, accepts: false };
   return { needs: false, accepts: true };
 }
+/* The hint must price what is actually selected: a three-resolution string
+   made the user do the lookup. Selected tier in bold, the rest one hover away. */
+function priceHint(m) {
+  var p = String((m && m.price) || "");
+  if (kind !== "video" || !p) return { html: esc(p), title: p };
+  var parts = p.split(" · "), res = $("vres").value, hit = -1;
+  for (var i = 0; i < parts.length; i++)
+    if (parts[i].indexOf(res) === 0) hit = i;
+  if (hit < 0 || parts.length < 2) return { html: esc(p), title: p };
+  var rest = parts.filter(function (_, i) { return i !== hit; }).join(" · ");
+  return {
+    html: "<b>" + esc(parts[hit]) + "</b>" +
+      (rest ? '<span class="dim" title="' + esc(rest) + '"> · 其它分辨率</span>' : ""),
+    title: p
+  };
+}
 function syncModels() {
   var sel = $("model"), list = modelsFor(kind);
   var s = list.map(function (m) { return m.id + "|" + m.label; }).join(",");
@@ -792,9 +917,9 @@ function syncModels() {
     if (list.some(function (m) { return m.id === keep; })) sel.value = keep;
     else if (list.length) sel.value = list[0].id;
   }
-  var m = currentModel();
-  $("modelprice").textContent = m ? (m.price || "") : "";
-  $("modelprice").title = m ? (m.price || "") : "";
+  var m = currentModel(), hint = priceHint(m);
+  $("modelprice").innerHTML = hint.html;
+  $("modelprice").title = hint.title;
 }
 var PLACEHOLDER = {
   image: "描述你要的画面：主体 + 光从哪来 + 什么颜色撞什么颜色 + 什么镜头。" +
@@ -805,6 +930,7 @@ var PLACEHOLDER = {
 };
 function setKind(k) {
   kind = k;
+  if (k !== "video") srcOpen = false;
   var btns = document.querySelectorAll("#kindseg button");
   for (var i = 0; i < btns.length; i++)
     btns[i].classList.toggle("on", btns[i].dataset.kind === k);
@@ -817,26 +943,64 @@ function setKind(k) {
   renderSource();
   estimate();
 }
-function renderSource() {
-  var w = $("srcwrap");
-  if (!sourceImage) { w.innerHTML = ""; return; }
-  w.innerHTML = '<span class="srcchip"><img src="/files/' + esc(sourceImage) +
-    '" alt=""><span>参考图 ' + esc(sourceImage.split("/").pop()) +
-    '</span><button data-act="clearsrc" title="清除参考图">×</button></span>';
+function doneImages() {          // recent finished images, newest first
+  return (S && S.playground || []).filter(function (t) {
+    return t.kind === "image" && t.status === "done" && t.file;
+  }).slice(0, 12);
 }
-function useAsSource(file) {
+/* Chip + picker live in the 视频 params row, so 从图片生成 has an entry there
+   and not only on a result tile's hover actions. */
+function renderSource() {
+  var w = $("srcwrap"), strip = $("srcstrip");
+  var accepts = kind === "video" && vidMode(currentModel()).accepts;
+  var imgs = doneImages();
+  var s = [kind, sourceImage || "", srcOpen, accepts,
+    imgs.map(function (t) { return t.id; }).join(",")].join("|");
+  if (sig.src === s) return;
+  sig.src = s;
+  var btn = accepts
+    ? '<button class="btn tiny" data-act="srcpick" aria-expanded="' +
+      (srcOpen ? "true" : "false") + '">' + (sourceImage ? "换一张" : "参考图…") +
+      "</button>"
+    : "";
+  w.innerHTML = (sourceImage && accepts
+    ? '<span class="srcchip"><img src="/files/' + esc(sourceImage) +
+      '" alt=""><span>参考图 ' + esc(sourceImage.split("/").pop()) +
+      '</span><button data-act="clearsrc" title="清除参考图" ' +
+      'aria-label="清除参考图">×</button></span>'
+    : "") + btn;
+  strip.hidden = !(srcOpen && accepts);
+  if (strip.hidden) { strip.innerHTML = ""; return; }
+  strip.innerHTML = '<span class="plabel">选一张</span>' +
+    (imgs.length
+      ? '<div class="srcrow">' + imgs.map(function (t) {
+        return '<button class="srcthumb' + (sourceImage === t.file ? " sel" : "") +
+          '" data-act="srcuse" data-file="' + esc(t.file) + '" title="' +
+          esc(t.prompt || "") + '"><img src="/files/' + esc(t.file) +
+          '" alt="" loading="lazy"></button>';
+      }).join("") + "</div>"
+      : '<span class="small" style="flex:1 1 auto">还没有已完成的图片 —— ' +
+        "先切到图片生成一张，几分钱一张。</span>") +
+    '<button class="btn tiny" data-act="srcclose">收起</button>';
+}
+function pickSource(file) {
   sourceImage = file;
-  setKind("video");
+  srcOpen = false;
   if (!vidMode(currentModel()).accepts) {   // t2v-only model: switch to one
     var alt = modelsFor("video").filter(function (m) {
       return vidMode(m).accepts;
     })[0];
     if (alt) { $("model").value = alt.id; syncModels(); }
   }
-  setView("create");
   renderSource();
+  estimate();
+}
+function useAsSource(file) {     // from a result tile: may need a kind/view switch
+  setKind("video");
+  pickSource(file);
+  setView("create");
   $("prompt").focus();
-  toast("已选为参考图", "写一句「怎么动」，例如 slow push-in, tail flicking", true);
+  toast("已选为参考图", "写一句怎么动，例如 slow push-in, tail flicking", true);
 }
 /* Exactly the body /api/generate would receive — so the number on the button
    row is produced by the same estimator that will charge the ledger. */
@@ -911,7 +1075,7 @@ async function submitGen() {
   if (!prompt) { toast("还没写提示词", "先写一句，或展开「套用风格模板」自动拼"); $("prompt").focus(); return; }
   var m = currentModel();
   if (kind === "video" && vidMode(m).needs && !sourceImage) {
-    toast("这个模型要一张参考图", "在下面的结果里点「用这张生视频」，或换一个文生视频模型");
+    toast("这个模型要一张参考图", "点参数栏的「参考图…」挑一张，或换一个文生视频模型");
     return;
   }
   var req = genRequest();
@@ -940,8 +1104,7 @@ function tile(t) {
   if (t.kind === "music") cls += " audio";
   if (t.status === "done") {
     if (t.kind === "image") media = '<img src="' + esc(f) + '" loading="lazy" alt="">';
-    else if (t.kind === "video")
-      media = '<video src="' + esc(f) + '" preload="metadata" controls></video>';
+    else if (t.kind === "video") media = videoPlayer(f, true);
     else media = '<span class="note">♪</span>';
   } else if (t.status === "running") {
     media = '<span class="skel"></span><span class="spin" style="position:relative"></span>';
@@ -981,7 +1144,8 @@ function renderResults() {
     return;
   }
   if (paint("results", s, $("results"),
-      '<div class="tiles">' + list.map(tile).join("") + "</div>")) initPlayers();
+      '<div class="tiles' + (list.length <= 2 ? " few" : "") + '">' +
+      list.map(tile).join("") + "</div>")) initPlayers();
 }
 
 /* ---------------- jobs ---------------- */
@@ -1021,17 +1185,17 @@ function renderJobs() {
     var steps = progCell(j);
     return '<tr data-act="job" data-name="' + esc(j.name) + '"' +
       (openJob === j.name ? ' class="on"' : "") + ">" +
-      '<td class="name">' + esc(j.name) + "</td>" +
-      "<td>" + esc(sp.flow || "—") + "</td>" +
-      "<td>" + esc(sp.style || "—") + "</td>" +
-      "<td>" + (steps || "—") + "</td>" +
-      '<td class="num">' + money(j.cost_usd) + "</td>" +
-      '<td class="num dim">' + money(sp.budget_usd) + "</td>" +
-      '<td class="num dim">' + money(j.estimate_usd) + "</td>" +
-      "<td>" + jobStatus(j) + "</td></tr>";
+      '<td class="name c-name">' + esc(j.name) + "</td>" +
+      '<td class="c-flow">' + (sp.flow ? esc(sp.flow) : DASH) + "</td>" +
+      '<td class="c-style">' + (sp.style ? esc(sp.style) : DASH) + "</td>" +
+      '<td class="c-prog">' + (steps || DASH) + "</td>" +
+      '<td class="num c-cost">' + money(j.cost_usd) + "</td>" +
+      '<td class="num dim c-budget">' + money(sp.budget_usd) + "</td>" +
+      '<td class="num dim c-est">' + money(j.estimate_usd) + "</td>" +
+      '<td class="c-status">' + jobStatus(j) + "</td></tr>";
   }).join("");
   paint("jobs", s, $("jobswrap"),
-    '<div class="card" style="overflow-x:auto"><table class="tbl">' +
+    '<div class="card" style="overflow-x:auto"><table class="tbl jobstbl">' +
     "<thead><tr><th>任务</th><th>流程</th><th>风格</th><th>进度</th>" +
     '<th class="num">已花费</th><th class="num">预算</th>' +
     '<th class="num">预估全程</th><th>状态</th></tr></thead>' +
@@ -1124,8 +1288,7 @@ async function renderJobDetail() {
     h += '<div class="mediarow">';
     if (done.assemble)
       h += '<div><div class="subhead">成片</div><div class="player">' +
-        '<video src="/files/' + esc(openJob) + '/final.mp4" controls' +
-        ' preload="metadata"></video></div></div>';
+        videoPlayer("/files/" + openJob + "/final.mp4") + "</div></div>";
     if (done.music)
       h += '<div class="m-audio"><div class="subhead">配乐</div>' +
         audioPlayer("/files/" + openJob + "/assets/music.wav") +
@@ -1175,10 +1338,11 @@ async function continueJob() {
 /* ---------------- library ---------------- */
 var KIND_LABEL = { image: "图片", video: "视频", music: "音乐",
   audio: "语音 / 音效" };
-var TIER_CLASS = { "草稿档": "t1", "均衡档": "t2", "性价比王": "t2",
-  "质量档": "t3", "旗舰档": "t4" };
-/* every badge hue has to say what it means somewhere — legend + tooltip */
-var TIER_NOTE = {              // iteration order = the legend's order: cheap first
+/* one ordinal ramp, cheapest → most expensive (r1..r4); 性价比王 is the single
+   award outside the axis, and 上一代 / 配音 / 音效 are not on it at all */
+var TIER_CLASS = { "草稿档": "r1", "均衡档": "r2", "性价比王": "val",
+  "质量档": "r3", "旗舰档": "r4" };
+var TIER_NOTE = {              // the badge's tooltip — cheap first
   "草稿档": "最便宜，大量试想法",
   "均衡档": "质价折中，日常出片",
   "性价比王": "同画质里单价最低",
@@ -1206,21 +1370,6 @@ function priceHtml(m) {
     '<a class="xlink" data-act="ext" target="_blank" rel="noopener" href="' +
     esc(falUrl(m)) + '">' + mark + " ↗</a>" + esc(p.slice(at + mark.length));
 }
-function renderLegend(models) {
-  var seen = {}, tiers = [];
-  models.forEach(function (m) { var t = tierOf(m); if (t) seen[t] = 1; });
-  Object.keys(TIER_NOTE).forEach(function (t) {   // known tiers, cheapest first
-    if (seen[t]) { tiers.push(t); delete seen[t]; }
-  });
-  Object.keys(seen).forEach(function (t) { tiers.push(t); });
-  var h = tiers.map(function (t) {
-    return '<span class="lgd">' + tierBadge(t) + esc(TIER_NOTE[t] || "") + "</span>";
-  }).join("");
-  if (models.some(function (m) { return m.selectable === false; }))
-    h += '<span class="lgd"><span class="tier only">仅展示</span>' +
-      esc(ONLY_NOTE) + "</span>";
-  paint("legend", tiers.join(",") + "|" + h.length, $("tierlegend"), h);
-}
 function tierOf(m) {
   if (m.tier) return String(m.tier);
   var hit = /(草稿档|均衡档|质量档)/.exec(m.label || "");
@@ -1232,7 +1381,6 @@ function cleanLabel(m) {
 function renderLibrary() {
   var models = S.models || [];
   var s = JSON.stringify(models) + "|" + JSON.stringify(expanded);
-  renderLegend(models);
   var groups = ["image", "video", "music", "audio"];
   models.forEach(function (m) {
     if (groups.indexOf(m.kind) < 0) groups.push(m.kind);
@@ -1257,11 +1405,11 @@ function renderLibrary() {
           '<div class="mcard-price">' + priceHtml(m) + "</div>" +
           '<div class="mcard-sum">' + esc(m.summary || m.pros || "") + "</div>" +
           (open ? '<div class="mcard-more">' +
-            (m.pros && m.summary ? '<div class="mline"><span class="k p">优点</span><span>' +
+            (m.pros && m.summary ? '<div class="mline"><span class="k">优点</span><span>' +
               esc(m.pros) + "</span></div>" : "") +
-            (m.cons ? '<div class="mline"><span class="k c">缺点</span><span>' +
+            (m.cons ? '<div class="mline"><span class="k">缺点</span><span>' +
               esc(m.cons) + "</span></div>" : "") +
-            (m.usage ? '<div class="mline"><span class="k u">用法</span><span>' +
+            (m.usage ? '<div class="mline"><span class="k">用法</span><span>' +
               esc(m.usage) + "</span></div>" : "") +
             (m.endpoint
               ? '<a class="endpoint mono" data-act="ext" target="_blank" rel="noopener"' +
@@ -1281,42 +1429,54 @@ var PRICE_LABEL = {
   image_high: ["图片 · 质量档", "/ 张"],
   music_per_s: ["音乐", "/ 秒"]
 };
+/* "$9.99 剩余 / 上限 $9.99" is not a rounding nicety, it is a wrong number:
+   when the two collapse to the same figure, show the remainder finer. */
+function remainText(rem, cap) {
+  var t = money(rem);
+  if (t === money(cap) && rem !== cap) t = "$" + rem.toFixed(3);
+  return t;
+}
 function renderQuota() {
   var cap = (S.limits && S.limits.global_cap_usd) || 0;
   var spent = S.spent || 0;
+  var rem = Math.max(0, cap - spent);
   var pct = cap > 0 ? Math.min(100, spent / cap * 100) : 0;
   var lvl = pct >= 100 ? "bad" : pct >= 80 ? "warn" : "";
   var s = [S.balance, spent, cap].join("|");
   paint("quotastats", s, $("quotastats"),
-    '<div class="stat"><div class="k">账户余额</div><div class="v">' +
+    '<div class="stat"><div class="k lc">fal 余额</div><div class="v">' +
     (S.balance == null ? "不可用" : money(S.balance)) +
     '</div><div class="n">fal 账户实时余额</div></div>' +
     '<div class="stat"><div class="k">累计消耗</div><div class="v">' + money(spent) +
     '</div><div class="n">试玩台 + 批量任务</div></div>' +
     '<div class="stat"><div class="k">剩余额度</div><div class="v">' +
-    money(Math.max(0, cap - spent)) + '</div><div class="n">上限 ' + money(cap) +
+    remainText(rem, cap) + '</div><div class="n">上限 ' + money(cap) +
     "</div></div>");
   if (document.activeElement !== $("cap")) $("cap").value = cap;
   $("capbar").className = "bigbar " + lvl;
-  var capfill = $("capbar").firstElementChild;   // 0% must be empty, not a speck
-  capfill.hidden = !(pct > 0);
-  capfill.style.width = (pct > 0 ? pct : 0) + "%";
+  var capfill = $("capbar").firstElementChild;   // under 1% shows nothing, not a dot
+  capfill.hidden = pct < 1;
+  capfill.style.width = pct + "%";
+  var share = pct > 0 && pct < 0.1 ? "占上限不到 0.1%"
+    : "占上限 " + pct.toFixed(1) + "%";
   $("capline").textContent = "已用 " + money(spent) + " / " + money(cap) +
-    "（" + pct.toFixed(1) + "%）。超过上限的请求会被直接拒绝，不会扣钱。";
+    "，" + share + "。超过上限的请求会被直接拒绝，不会扣钱。";
   var P = S.prices || {}, rows = "";
+  function prow(k, v) {
+    rows += '<div class="prow"><span class="k">' + esc(k) + '</span>' +
+      '<span class="v">' + esc(v) + "</span></div>";
+  }
   Object.keys(P).forEach(function (k) {
     if (k === "video_per_s") return;
     var lab = PRICE_LABEL[k] || [k, ""];
-    rows += "<tr><td>" + esc(lab[0]) + "</td><td>$" + P[k] + " " + esc(lab[1]) +
-      "</td></tr>";
+    prow(lab[0], "$" + P[k] + " " + lab[1]);
   });
   if (P.video_per_s) {
     Object.keys(P.video_per_s).forEach(function (r) {
-      rows += "<tr><td>视频 · " + esc(r) + "</td><td>$" + P.video_per_s[r] +
-        " / 秒</td></tr>";
+      prow("视频 · " + r, "$" + P.video_per_s[r] + " / 秒");
     });
   }
-  paint("prices", rows, $("prices"), "<tbody>" + rows + "</tbody>");
+  paint("prices", rows, $("prices"), rows);
 }
 
 /* ---------------- banner ---------------- */
@@ -1344,18 +1504,21 @@ async function refresh() {
   $("bal").textContent = S.balance == null ? "不可用" : money(S.balance);
   var cap = (S.limits && S.limits.global_cap_usd) || 0;
   var pct = cap > 0 ? Math.min(100, (S.spent || 0) / cap * 100) : 0;
-  $("meterfill").hidden = !(pct > 0);
-  $("meterfill").style.width = (pct > 0 ? pct : 0) + "%";
+  $("meterfill").hidden = pct < 1;      // a 0.03% fill is a speck, not a reading
+  $("meterfill").style.width = pct + "%";
   $("meter").className = "meter " + (pct >= 100 ? "bad" : pct >= 80 ? "warn" : "");
   document.querySelector(".balchip").title =
     "已花 " + money(S.spent) + " / 上限 " + money(cap) + " —— 点开看额度明细";
   renderBanner();
   var styleKeys = Object.keys(S.styles || {});
-  if (sig.styles !== styleKeys.join(",")) {
-    sig.styles = styleKeys.join(",");
+  var stylesig = styleKeys.map(function (k) {
+    return k + "=" + styleLabel(k);
+  }).join(",");
+  if (sig.styles !== stylesig) {
+    sig.styles = stylesig;
     var sel = $("style"), keep = sel.value;
-    sel.innerHTML = styleKeys.map(function (k) {
-      return '<option value="' + esc(k) + '">' + esc(k) + "</option>";
+    sel.innerHTML = styleKeys.map(function (k) {   // 中文在前，slug 仍是取值
+      return '<option value="' + esc(k) + '">' + esc(styleLabel(k)) + "</option>";
     }).join("");
     if (styleKeys.indexOf(keep) >= 0) sel.value = keep;
     styleDesc();
@@ -1372,10 +1535,19 @@ async function refresh() {
   }
   syncModels();
   renderResults();
+  renderSource();      // new results = new candidates in the 参考图 picker
   renderJobs();
   renderLibrary();
   renderQuota();
   estimate();
+}
+/* A slug is a wall for a beginner: 「黑色电影风 · contrast-noir」 reads first in
+   Chinese and still teaches the slug the docs and the CLI use. */
+function styleLabel(k) {
+  var d = (S && S.style_info && S.style_info[k]) || "";
+  var at = d.search(/[：:]/);
+  var name = at > 0 ? d.slice(0, at).trim() : "";
+  return name ? name + " · " + k : k;
 }
 function styleDesc() {
   $("styledesc").textContent = (S && S.style_info && S.style_info[$("style").value]) || "";
@@ -1392,6 +1564,9 @@ document.addEventListener("click", function (ev) {
   var act = a.dataset.act;
   if (act === "ext") return;   // outbound fal.ai link: let the browser handle it
   if (act === "src") useAsSource(a.dataset.file);
+  else if (act === "srcpick") { srcOpen = !srcOpen; renderSource(); }
+  else if (act === "srcclose") { srcOpen = false; renderSource(); }
+  else if (act === "srcuse") pickSource(a.dataset.file);
   else if (act === "clearsrc") { sourceImage = null; renderSource(); estimate(); }
   else if (act === "example") {
     $("prompt").value = "a black cat with amber eyes, hard neon signs as the only " +
@@ -1420,14 +1595,16 @@ $("genbtn").addEventListener("click", submitGen);
 $("style").addEventListener("change", styleDesc);
 $("model").addEventListener("change", function () {
   if (kind === "video" && !vidMode(currentModel()).accepts) {
-    sourceImage = null; renderSource();
+    sourceImage = null; srcOpen = false;      // t2v-only: no reference image
   }
-  syncModels(); estimate();
+  syncModels(); renderSource(); estimate();
 });
 ["isize", "vdur", "vres", "mdur"].forEach(function (id) {
   $(id).addEventListener("change", estimate);
   $(id).addEventListener("input", estimate);
 });
+// the price hint quotes the selected resolution, so it moves with it
+$("vres").addEventListener("change", syncModels);
 $("prompt").addEventListener("keydown", function (ev) {
   if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter") submitGen();
 });
