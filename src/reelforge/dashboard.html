@@ -6,7 +6,10 @@
 <title>reelforge 工作台</title>
 <style>
 :root{
-  --bg:#ffffff; --fg:#111114; --fg-2:#3f3f46; --muted:#71717a; --faint:#a1a1aa;
+  /* --faint is the floor for 11–12px labels: 5.2:1 on white. --faint-deco is
+     below the text floor and may only carry pure decoration (chevrons). */
+  --bg:#ffffff; --fg:#111114; --fg-2:#3f3f46; --muted:#71717a; --faint:#6b6b76;
+  --faint-deco:#a1a1aa; --ph:#8e8e96; --ph-strong:#7c7c85;
   --line:#e7e7ea; --line-2:#f1f1f3; --surface:#fafafa; --surface-2:#f5f5f6;
   --accent:#4f46e5; --accent-weak:#eef0ff; --accent-line:#dfdefb;
   --ok:#15803d; --ok-bg:#f0fdf4; --warn:#b45309; --warn-bg:#fffbeb;
@@ -51,10 +54,12 @@ h2{font-size:14px;font-weight:620}
 .mark{width:16px;height:16px;border-radius:5px;
       background:linear-gradient(135deg,#6d5ef6,#3f34d6 62%,#1f1a7a)}
 .tabs{display:flex;gap:2px;flex:1}
+/* hover and current must never share a shape: hover is a faint tint on dark
+   text, current is the inverted pill — never two shades of the same gray pill */
 .tab{background:none;border:0;cursor:pointer;padding:6px 11px;border-radius:7px;
      font-size:13px;color:var(--muted);transition:background var(--t),color var(--t)}
-.tab:hover{color:var(--fg);background:var(--surface-2)}
-.tab.on{color:var(--fg);background:var(--surface-2);font-weight:560}
+.tab:hover{color:var(--fg);background:rgba(17,17,20,.04)}
+.tab.on,.tab.on:hover{color:#fff;background:#111114;font-weight:560}
 .nav-right{display:flex;align-items:center;gap:8px;flex:none}
 .balchip{display:flex;align-items:center;gap:9px;background:#fff;cursor:pointer;
          border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 13px;
@@ -63,8 +68,9 @@ h2{font-size:14px;font-weight:620}
 .balchip .k{font-size:11px;color:var(--faint);letter-spacing:.04em}
 .balchip .v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 .meter{width:52px;height:4px;border-radius:999px;background:var(--line);overflow:hidden}
-.meter i{display:block;height:100%;width:0;border-radius:999px;background:var(--accent);
-         transition:width 300ms ease}
+/* a sub-pixel fill renders as a speck: floor it, and hide it outright at 0 */
+.meter i{display:block;height:100%;width:0;min-width:4px;border-radius:999px;
+         background:var(--accent);transition:width 300ms ease}
 .meter.warn i{background:#d97706}.meter.bad i{background:var(--bad)}
 .iconbtn{width:30px;height:30px;border-radius:999px;border:1px solid var(--line);
          background:#fff;cursor:pointer;font-size:13px;color:var(--muted);
@@ -73,7 +79,7 @@ h2{font-size:14px;font-weight:620}
 
 /* ---------- banner ---------- */
 .banner{background:var(--accent-weak);border-bottom:1px solid var(--accent-line)}
-.banner-in{max-width:1120px;margin:0 auto;padding:9px 24px;display:flex;
+.banner-in{max-width:1040px;margin:0 auto;padding:9px 24px;display:flex;
            align-items:center;gap:10px;font-size:13px;color:#312e81}
 .banner b{font-variant-numeric:tabular-nums}
 .banner .x{margin-left:auto;background:none;border:0;cursor:pointer;color:#4338ca;
@@ -96,7 +102,8 @@ input[type=text],input[type=number],select,textarea{
   background:#fff;border:1px solid var(--line);border-radius:var(--r-ctl);
   padding:7px 10px;font-size:13px;transition:border-color var(--t),box-shadow var(--t);
   min-width:0}
-input::placeholder,textarea::placeholder{color:#b8b8be}
+input::placeholder,textarea::placeholder{color:var(--ph)}
+.prompt::placeholder{color:var(--ph-strong)}
 input:hover,select:hover,textarea:hover{border-color:#d9d9de}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);
   box-shadow:0 0 0 3px rgba(79,70,229,.12);outline:none}
@@ -137,8 +144,8 @@ select{appearance:none;-webkit-appearance:none;padding-right:28px;cursor:pointer
               transition:background var(--t)}
 .fold summary::-webkit-details-marker{display:none}
 .fold summary:hover{background:var(--surface)}
-.chev{width:7px;height:7px;border-right:1.5px solid var(--faint);
-      border-bottom:1.5px solid var(--faint);transform:rotate(-45deg);
+.chev{width:7px;height:7px;border-right:1.5px solid var(--faint-deco);
+      border-bottom:1.5px solid var(--faint-deco);transform:rotate(-45deg);
       margin-left:2px;transition:transform var(--t)}
 details[open]>summary .chev{transform:rotate(45deg)}
 .fold-note{margin-left:auto;font-size:12px;color:var(--faint)}
@@ -153,7 +160,8 @@ details[open]>summary .chev{transform:rotate(45deg)}
                 color:var(--faint);font-weight:600}
 .pgroup{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;
         color:var(--muted)}
-.pgroup select,.pgroup input{background:#fff}
+/* background-color, never the shorthand — the shorthand wipes the select arrow */
+.pgroup select,.pgroup input{background-color:#fff}
 .pgroup input[type=number]{width:66px}
 .srcchip{display:inline-flex;align-items:center;gap:7px;background:#fff;
          border:1px solid var(--accent-line);border-radius:999px;padding:3px 5px 3px 4px;
@@ -192,7 +200,6 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .tile-p{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:6px;
         display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
         overflow:hidden;overflow-wrap:anywhere}
-.tile audio{width:100%;height:32px;margin-top:8px}
 .skel{position:absolute;inset:0;background:
       linear-gradient(100deg,var(--surface-2) 30%,#ececee 48%,var(--surface-2) 66%);
       background-size:220% 100%;animation:sh 1.4s linear infinite}
@@ -220,6 +227,10 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .tier.t2{background:var(--accent-weak);color:#4338ca}
 .tier.t3{background:#fdf2f8;color:#a21561}
 .tier.t4{background:#fffbeb;color:#b45309}
+.tier.only{background:#fff;color:var(--muted);border:1px dashed #d4d4d8;padding:0 6px}
+/* what the badge hues mean — without it they are just decoration */
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
+.lgd{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 
 /* ---------- table ---------- */
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
@@ -234,6 +245,10 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .tbl .num{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .tbl th.num{text-align:right}
 .tbl .name{font-weight:560}
+/* the row keeps a compact count; the full stepper lives in the detail only */
+.prog{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.prog b{font-weight:600;font-variant-numeric:tabular-nums}
+.prog .s{color:var(--muted)}
 
 /* ---------- job detail ---------- */
 .detail{margin-top:16px;padding:20px}
@@ -254,11 +269,14 @@ details[open]>summary .chev{transform:rotate(45deg)}
         display:flex;align-items:center;justify-content:center;font-size:11px;
         color:var(--muted);background:rgba(79,70,229,.045)}
 .tl-seg:nth-child(even){background:rgba(79,70,229,.10)}
-.tl-seg.drop{background:rgba(179,38,30,.09)}
+/* red is reserved for failure — the drop marker is amber with a diamond tick */
+.tl-seg.drop{background:rgba(180,83,9,.11)}
 .tl-tick{position:absolute;top:0;bottom:0;width:1px;background:rgba(17,17,20,.09)}
-.tl-drop{position:absolute;top:0;bottom:0;width:2px;background:var(--bad)}
-.tl-drop::after{content:"drop";position:absolute;top:2px;left:4px;font-size:10px;
-                color:var(--bad);font-weight:600;letter-spacing:.04em}
+.tl-drop{position:absolute;top:0;bottom:0;width:2px;background:var(--warn);z-index:2}
+.tl-drop::before{content:"";position:absolute;top:1px;left:-3px;width:8px;height:8px;
+                 border-radius:2px;background:var(--warn);transform:rotate(45deg)}
+.tl-drop::after{content:"drop";position:absolute;top:1px;left:8px;font-size:10px;
+                color:var(--warn);font-weight:600;letter-spacing:.04em;line-height:1.2}
 .picks{display:flex;flex-direction:column;gap:16px;margin-top:12px}
 .pick-row{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
 .pick-head{width:74px;flex:none;font-size:12.5px;color:var(--muted);padding-top:4px}
@@ -272,9 +290,34 @@ details[open]>summary .chev{transform:rotate(45deg)}
             background:var(--accent);color:#fff;font-size:10px;display:none;
             place-items:center;line-height:1}
 .pick.sel .tick{display:grid}
-.player{display:inline-block;border-radius:10px;border:1px solid var(--line);
-        overflow:hidden;background:#000;line-height:0}
-.player video{max-height:300px;max-width:100%;width:auto;display:block}
+/* 成片 + 配乐 sit side by side; a lone strip wasted the card's width */
+.mediarow{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-top:22px}
+.mediarow>div{min-width:0}
+.mediarow .subhead{margin-top:0}
+.mediarow .m-audio{flex:1 1 280px;min-width:240px;max-width:420px}
+.player{display:block;width:fit-content;max-width:100%;border-radius:10px;
+        border:1px solid var(--line);overflow:hidden;background:#000;line-height:0}
+.player video{height:400px;max-height:56vh;width:auto;max-width:100%;display:block;
+              object-fit:contain;background:#000}
+
+/* audio: one custom control, used in the job detail and in music tiles */
+.aplayer{display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;
+         border:1px solid var(--line);border-radius:var(--r-ctl);background:#fff}
+.aplayer audio{display:none}
+.ap-btn{width:28px;height:28px;flex:none;padding:0;border:0;border-radius:50%;
+        background:var(--fg);color:#fff;cursor:pointer;display:grid;place-items:center;
+        transition:opacity var(--t),transform var(--t)}
+.ap-btn:hover{opacity:.86}
+.ap-btn:active{transform:scale(.94)}
+.ap-track{position:relative;flex:1 1 auto;min-width:36px;height:4px;border-radius:999px;
+          background:var(--line-2);cursor:pointer}
+.ap-track::after{content:"";position:absolute;inset:-14px 0}
+.ap-track i{display:block;height:100%;width:0;border-radius:999px;background:var(--accent)}
+.ap-time{flex:none;font-size:12px;color:var(--muted);text-align:right;
+         font-variant-numeric:tabular-nums}
+.aplayer.mini{height:38px;padding:0 9px;gap:9px;margin-top:8px}
+.aplayer.mini .ap-btn{width:24px;height:24px}
+.aplayer.mini .ap-time{font-size:11px}
 .logfold summary{list-style:none;cursor:pointer;font-size:13px;color:var(--muted);
                  display:flex;align-items:center;gap:8px;padding:4px 0}
 .logfold summary::-webkit-details-marker{display:none}
@@ -309,7 +352,11 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .mline .k{font-size:11px;font-weight:600;color:var(--faint);letter-spacing:.04em;
           padding-top:2px}
 .mline .k.p{color:var(--ok)}.mline .k.c{color:var(--bad)}.mline .k.u{color:var(--accent)}
-.endpoint{font-size:11.5px;color:var(--faint);margin-top:2px;overflow-wrap:anywhere}
+.endpoint{display:inline-block;font-size:11.5px;color:var(--muted);margin-top:2px;
+          overflow-wrap:anywhere;text-decoration:none}
+.endpoint:hover{color:var(--accent);text-decoration:underline}
+.xlink{color:var(--accent);text-decoration:none;white-space:nowrap}
+.xlink:hover{text-decoration:underline}
 
 /* ---------- quota ---------- */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
@@ -322,10 +369,11 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .stat .n{font-size:12.5px;color:var(--muted);margin-top:3px}
 .bigbar{height:6px;border-radius:999px;background:var(--line-2);overflow:hidden;
         margin-top:12px}
-.bigbar i{display:block;height:100%;border-radius:999px;background:var(--accent);
-          transition:width 300ms ease}
+.bigbar i{display:block;height:100%;min-width:6px;border-radius:999px;
+          background:var(--accent);transition:width 300ms ease}
 .bigbar.warn i{background:#d97706}.bigbar.bad i{background:var(--bad)}
-.pricetbl{max-width:520px}
+/* the cap group and the price table share one 520px measure so they align */
+.capgroup,.pricetbl{max-width:520px}
 .pricetbl td{padding:9px 0}
 .pricetbl td:first-child{color:var(--muted)}
 .pricetbl td:last-child{text-align:right;font-variant-numeric:tabular-nums}
@@ -366,6 +414,16 @@ details[open]>summary .chev{transform:rotate(45deg)}
   .grid3{grid-template-columns:1fr}
   .composer-foot .btn.primary{margin-left:0;width:100%;justify-content:center}
   .params{gap:10px}
+}
+@media (max-width:520px){
+  /* the model name and its price must never be truncated to "Z-Image T" / "$0.0…" */
+  .composer .top{gap:10px}
+  .modelpick{flex:1 0 100%;flex-wrap:wrap}
+  .modelpick select{flex:1 1 100%;max-width:none}
+  .price-hint{flex:1 1 100%;white-space:normal;overflow:visible;text-overflow:clip;
+              line-height:1.5}
+  .mediarow{gap:14px}
+  .player video{height:320px}
 }
 </style>
 </head>
@@ -493,6 +551,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
     <div class="view-head">
       <h1>模型库</h1>
       <p class="sub">按用途分组，点卡片看优缺点与用法。</p>
+      <div class="legend" id="tierlegend"></div>
     </div>
     <div id="library"></div>
   </section>
@@ -505,15 +564,17 @@ details[open]>summary .chev{transform:rotate(45deg)}
     </div>
     <div class="stats" id="quotastats"></div>
     <div class="card pad" style="margin-top:16px">
-      <div class="lbl">总额度上限</div>
-      <div class="row" style="margin-top:10px">
-        <input type="number" id="cap" step="0.5" min="0" style="width:120px">
-        <span class="small">USD</span>
-        <button class="btn" id="capsave">保存</button>
-        <span class="small" id="capnote"></span>
+      <div class="capgroup">
+        <div class="lbl">总额度上限</div>
+        <div class="row" style="margin-top:10px">
+          <input type="number" id="cap" step="0.5" min="0" style="width:120px">
+          <span class="small">USD</span>
+          <button class="btn" id="capsave">保存</button>
+          <span class="small" id="capnote"></span>
+        </div>
+        <div class="bigbar" id="capbar"><i></i></div>
+        <p class="small" id="capline" style="margin-top:8px"></p>
       </div>
-      <div class="bigbar" id="capbar"><i></i></div>
-      <p class="small" id="capline" style="margin-top:8px"></p>
     </div>
     <div class="card pad" style="margin-top:16px">
       <div class="lbl">价格表</div>
@@ -600,6 +661,66 @@ function paint(key, s, el, html) {
   el.innerHTML = html;
   return true;
 }
+/* ---------------- audio player ----------------
+   One control for every sound on the page (job 配乐, music results): the native
+   <audio> chrome does not match anything else here. The <audio> node stays in
+   the DOM on purpose — removing it from the document pauses playback, so a
+   re-render can never leave an invisible track playing. */
+var PLAY_SVG = '<svg width="9" height="10" viewBox="0 0 9 10" aria-hidden="true"' +
+  ' style="margin-left:1px"><path d="M0 0l9 5-9 5z" fill="currentColor"/></svg>';
+var PAUSE_SVG = '<svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true">' +
+  '<rect width="2.5" height="10" rx="1" fill="currentColor"/>' +
+  '<rect x="5.5" width="2.5" height="10" rx="1" fill="currentColor"/></svg>';
+function fmtTime(t) {
+  if (!isFinite(t) || t < 0) t = 0;
+  var m = Math.floor(t / 60), s = Math.floor(t % 60);
+  return m + ":" + (s < 10 ? "0" : "") + s;
+}
+function audioPlayer(src, mini) {
+  return '<div class="aplayer' + (mini ? " mini" : "") + '">' +
+    '<button class="ap-btn" type="button" aria-label="播放">' + PLAY_SVG + "</button>" +
+    '<div class="ap-track"><i></i></div>' +
+    '<span class="ap-time">0:00 / --:--</span>' +
+    '<audio src="' + esc(src) + '" preload="metadata"></audio></div>';
+}
+function initPlayers() {
+  var list = document.querySelectorAll(".aplayer:not([data-ready])");
+  for (var i = 0; i < list.length; i++) wirePlayer(list[i]);
+}
+function wirePlayer(el) {
+  el.setAttribute("data-ready", "1");
+  var a = el.querySelector("audio"), btn = el.querySelector(".ap-btn");
+  var track = el.querySelector(".ap-track"), fill = track.firstElementChild;
+  var time = el.querySelector(".ap-time");
+  function draw() {
+    var d = isFinite(a.duration) ? a.duration : 0;
+    fill.style.width = d ? (a.currentTime / d * 100).toFixed(2) + "%" : "0";
+    time.textContent = fmtTime(a.currentTime) + " / " + (d ? fmtTime(d) : "--:--");
+  }
+  btn.addEventListener("click", function () {
+    if (a.paused) {
+      var p = a.play();
+      if (p && p.catch) p.catch(function (e) { toast("播放失败", e.message); });
+    } else a.pause();
+  });
+  a.addEventListener("play", function () {
+    btn.innerHTML = PAUSE_SVG; btn.setAttribute("aria-label", "暂停");
+  });
+  a.addEventListener("pause", function () {
+    btn.innerHTML = PLAY_SVG; btn.setAttribute("aria-label", "播放");
+  });
+  a.addEventListener("timeupdate", draw);
+  a.addEventListener("loadedmetadata", draw);
+  a.addEventListener("ended", function () { a.currentTime = 0; draw(); });
+  track.addEventListener("click", function (ev) {
+    if (!isFinite(a.duration) || !a.duration) return;
+    var r = track.getBoundingClientRect();
+    var f = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+    a.currentTime = f * a.duration;
+    draw();
+  });
+  draw();
+}
 function toast(title, detail, ok) {
   var el = document.createElement("div");
   el.className = "toast" + (ok ? " ok" : "");
@@ -675,6 +796,13 @@ function syncModels() {
   $("modelprice").textContent = m ? (m.price || "") : "";
   $("modelprice").title = m ? (m.price || "") : "";
 }
+var PLACEHOLDER = {
+  image: "描述你要的画面：主体 + 光从哪来 + 什么颜色撞什么颜色 + 什么镜头。" +
+    "中文可用，英文效果更好。",
+  video: "描述这几秒里发生什么：主体 + 怎么动（缓慢推进 / 环绕 / 跟拍）+ 光线和颜色。" +
+    "镜头只有几秒，写一个动作就够。",
+  music: "描述曲风、乐器、节奏，例如：dark phonk, heavy 808 bass, 120bpm"
+};
 function setKind(k) {
   kind = k;
   var btns = document.querySelectorAll("#kindseg button");
@@ -684,9 +812,7 @@ function setKind(k) {
   for (var j = 0; j < groups.length; j++)
     groups[j].hidden = groups[j].dataset.kind !== k;
   $("tmplfold").hidden = k === "music";
-  $("prompt").placeholder = k === "music"
-    ? "描述曲风、乐器、节奏，例如：dark phonk, heavy 808 bass, 120bpm"
-    : "描述你要的画面：主体 + 光从哪来 + 什么颜色撞什么颜色 + 什么镜头。中文可用，英文效果更好。";
+  $("prompt").placeholder = PLACEHOLDER[k] || PLACEHOLDER.image;
   syncModels();
   renderSource();
   estimate();
@@ -833,8 +959,7 @@ function tile(t) {
   var chip = { running: '<span class="chip run">生成中</span>',
     done: '<span class="chip done">完成</span>',
     failed: '<span class="chip fail">失败</span>' }[t.status] || "";
-  var audio = (t.status === "done" && t.kind === "music")
-    ? '<audio src="' + esc(f) + '" controls preload="none"></audio>' : "";
+  var audio = (t.status === "done" && t.kind === "music") ? audioPlayer(f, true) : "";
   var err = t.error ? '<div class="tile-p" style="color:var(--bad)" title="' +
     esc(t.error) + '">' + esc(t.error) + "</div>" : "";
   return '<div class="tile"><div class="' + cls + '">' + media + acts + "</div>" +
@@ -855,8 +980,8 @@ function renderResults() {
       '<button class="btn" data-act="example">用示例提示词填上</button></div>');
     return;
   }
-  paint("results", s, $("results"),
-    '<div class="tiles">' + list.map(tile).join("") + "</div>");
+  if (paint("results", s, $("results"),
+      '<div class="tiles">' + list.map(tile).join("") + "</div>")) initPlayers();
 }
 
 /* ---------------- jobs ---------------- */
@@ -867,6 +992,18 @@ function jobStatus(j) {
   if (j.awaiting_review) return '<span class="chip wait">待选图</span>';
   if (j.final) return '<span class="chip done">已成片</span>';
   return '<span class="chip run">进行中</span>';
+}
+/* the row says how far it got; the full stepper is the detail's job */
+function progCell(j) {
+  var done = j.steps || [];
+  if (!done.length) return '<span class="prog"><b>0/' + STEP_ORDER.length +
+    '</b><span class="s">未开始</span></span>';
+  var total = Math.max(STEP_ORDER.length, done.length);
+  var last = done[done.length - 1];
+  return '<span class="prog" title="' + esc(done.map(function (k) {
+    return STEP_LABEL[k] || k;
+  }).join(" → ")) + '"><b>' + done.length + "/" + total + "</b>" +
+    '<span class="s">' + esc(STEP_LABEL[last] || last) + "</span></span>";
 }
 function renderJobs() {
   var jobs = S.jobs || [];
@@ -881,15 +1018,13 @@ function renderJobs() {
   })) + "|" + openJob;
   var rows = jobs.map(function (j) {
     var sp = j.spec || {};
-    var steps = (j.steps || []).map(function (k) {
-      return '<span class="chip plain">' + esc(STEP_LABEL[k] || k) + "</span>";
-    }).join(" ");
+    var steps = progCell(j);
     return '<tr data-act="job" data-name="' + esc(j.name) + '"' +
       (openJob === j.name ? ' class="on"' : "") + ">" +
       '<td class="name">' + esc(j.name) + "</td>" +
       "<td>" + esc(sp.flow || "—") + "</td>" +
       "<td>" + esc(sp.style || "—") + "</td>" +
-      '<td style="line-height:2.1">' + (steps || "—") + "</td>" +
+      "<td>" + (steps || "—") + "</td>" +
       '<td class="num">' + money(j.cost_usd) + "</td>" +
       '<td class="num dim">' + money(sp.budget_usd) + "</td>" +
       '<td class="num dim">' + money(j.estimate_usd) + "</td>" +
@@ -935,7 +1070,7 @@ function timeline(plan, beats) {
   h += "</div></div>";
   var bpm = beats && beats.bpm ? Math.round(beats.bpm) : "?";
   h += '<p class="small">切点全部落拍 · 总长 ' + total.toFixed(1) + "s · BPM " + bpm +
-    " · " + plan.length + " 个镜头 · 红线是 drop（情绪最高点）</p>";
+    " · " + plan.length + " 个镜头 · 橙色菱形是 drop（情绪最高点）</p>";
   return h;
 }
 async function toggleJob(name) {
@@ -985,13 +1120,19 @@ async function renderJobDetail() {
     h += '<div class="row" style="margin-top:16px">' +
       '<button class="btn primary" data-act="continue">继续运行</button>' +
       '<span class="small">从上次中断的步骤接着跑。</span></div>';
-  if (done.assemble)
-    h += '<div class="subhead">成片</div><div class="player">' +
-      '<video src="/files/' + esc(openJob) + '/final.mp4" controls preload="metadata"' +
-      ' style="width:100%"></video></div>';
-  if (done.music)
-    h += '<div class="subhead">配乐</div><audio src="/files/' + esc(openJob) +
-      '/assets/music.wav" controls preload="none" style="width:288px"></audio>';
+  if (done.assemble || done.music) {   // side by side: one card, both artifacts
+    h += '<div class="mediarow">';
+    if (done.assemble)
+      h += '<div><div class="subhead">成片</div><div class="player">' +
+        '<video src="/files/' + esc(openJob) + '/final.mp4" controls' +
+        ' preload="metadata"></video></div></div>';
+    if (done.music)
+      h += '<div class="m-audio"><div class="subhead">配乐</div>' +
+        audioPlayer("/files/" + openJob + "/assets/music.wav") +
+        '<p class="small" style="margin-top:8px">卡点用的就是这段音乐，' +
+        "上面时间线的刻度是它的节拍。</p></div>";
+    h += "</div>";
+  }
   if (d.run_log_tail)
     h += '<details class="logfold"' + (logOpen ? " open" : "") +
       ' style="margin-top:22px"><summary data-act="logfold">' +
@@ -1001,6 +1142,7 @@ async function renderJobDetail() {
   var s = [openJob, Object.keys(done).join(","), awaiting, logOpen,
     st.cost_usd, (d.run_log_tail || "").length].join("|");
   if (paint("detail", s, $("jobdetail"), h)) {
+    initPlayers();
     var pre = $("jobdetail").querySelector(".logfold pre");
     if (pre) pre.scrollTop = pre.scrollHeight;   // a tail should show the tail
   }
@@ -1035,6 +1177,50 @@ var KIND_LABEL = { image: "图片", video: "视频", music: "音乐",
   audio: "语音 / 音效" };
 var TIER_CLASS = { "草稿档": "t1", "均衡档": "t2", "性价比王": "t2",
   "质量档": "t3", "旗舰档": "t4" };
+/* every badge hue has to say what it means somewhere — legend + tooltip */
+var TIER_NOTE = {              // iteration order = the legend's order: cheap first
+  "草稿档": "最便宜，大量试想法",
+  "均衡档": "质价折中，日常出片",
+  "性价比王": "同画质里单价最低",
+  "质量档": "挑中后出正式版",
+  "旗舰档": "最贵，封面级才用",
+  "上一代": "旧款，已有更好替代",
+  "配音": "文字转语音",
+  "音效": "环境音 / 音效"
+};
+var ONLY_NOTE = "可查参数，暂未接入一键生成";
+function tierBadge(tier) {
+  return '<span class="tier ' + (TIER_CLASS[tier] || "") + '" title="' +
+    esc(tier + (TIER_NOTE[tier] ? "：" + TIER_NOTE[tier] : "")) + '">' +
+    esc(tier) + "</span>";
+}
+function falUrl(m) {
+  return "https://fal.ai/models/" + String(m.endpoint || "").replace(/^\/+/, "");
+}
+/* "见 fal 模型页" is a dead end as plain text — make it the actual link */
+function priceHtml(m) {
+  var p = String(m.price || ""), mark = "见 fal 模型页";
+  var at = p.indexOf(mark);
+  if (at < 0 || !m.endpoint) return esc(p);
+  return esc(p.slice(0, at)) +
+    '<a class="xlink" data-act="ext" target="_blank" rel="noopener" href="' +
+    esc(falUrl(m)) + '">' + mark + " ↗</a>" + esc(p.slice(at + mark.length));
+}
+function renderLegend(models) {
+  var seen = {}, tiers = [];
+  models.forEach(function (m) { var t = tierOf(m); if (t) seen[t] = 1; });
+  Object.keys(TIER_NOTE).forEach(function (t) {   // known tiers, cheapest first
+    if (seen[t]) { tiers.push(t); delete seen[t]; }
+  });
+  Object.keys(seen).forEach(function (t) { tiers.push(t); });
+  var h = tiers.map(function (t) {
+    return '<span class="lgd">' + tierBadge(t) + esc(TIER_NOTE[t] || "") + "</span>";
+  }).join("");
+  if (models.some(function (m) { return m.selectable === false; }))
+    h += '<span class="lgd"><span class="tier only">仅展示</span>' +
+      esc(ONLY_NOTE) + "</span>";
+  paint("legend", tiers.join(",") + "|" + h.length, $("tierlegend"), h);
+}
 function tierOf(m) {
   if (m.tier) return String(m.tier);
   var hit = /(草稿档|均衡档|质量档)/.exec(m.label || "");
@@ -1046,6 +1232,7 @@ function cleanLabel(m) {
 function renderLibrary() {
   var models = S.models || [];
   var s = JSON.stringify(models) + "|" + JSON.stringify(expanded);
+  renderLegend(models);
   var groups = ["image", "video", "music", "audio"];
   models.forEach(function (m) {
     if (groups.indexOf(m.kind) < 0) groups.push(m.kind);
@@ -1061,14 +1248,13 @@ function renderLibrary() {
         return '<div class="mcard' + (open ? " open" : "") +
           '" data-act="model" data-id="' + esc(m.id) + '">' +
           '<div class="mcard-top"><span class="mcard-name">' + esc(cleanLabel(m)) +
-          "</span>" + (tier ? '<span class="tier ' + (TIER_CLASS[tier] || "") + '">' +
-            esc(tier) + "</span>" : "") +
+          "</span>" + (tier ? tierBadge(tier) : "") +
           (m.selectable === false
-            ? '<span class="tier" title="模型库里可查，但还没接入一键生成">仅展示</span>'
+            ? '<span class="tier only" title="' + esc(ONLY_NOTE) + '">仅展示</span>'
             : "") +
           '<span class="spacer"></span><span class="chev"' +
           (open ? ' style="transform:rotate(45deg)"' : "") + "></span></div>" +
-          '<div class="mcard-price">' + esc(m.price || "") + "</div>" +
+          '<div class="mcard-price">' + priceHtml(m) + "</div>" +
           '<div class="mcard-sum">' + esc(m.summary || m.pros || "") + "</div>" +
           (open ? '<div class="mcard-more">' +
             (m.pros && m.summary ? '<div class="mline"><span class="k p">优点</span><span>' +
@@ -1077,7 +1263,12 @@ function renderLibrary() {
               esc(m.cons) + "</span></div>" : "") +
             (m.usage ? '<div class="mline"><span class="k u">用法</span><span>' +
               esc(m.usage) + "</span></div>" : "") +
-            '<div class="endpoint mono">' + esc(m.endpoint || m.id) + "</div></div>" : "") +
+            (m.endpoint
+              ? '<a class="endpoint mono" data-act="ext" target="_blank" rel="noopener"' +
+                ' href="' + esc(falUrl(m)) + '" title="在 fal.ai 打开这个模型页">' +
+                esc(m.endpoint) + " ↗</a>"
+              : '<div class="endpoint mono">' + esc(m.id) + "</div>") +
+            "</div>" : "") +
           "</div>";
       }).join("") + "</div></div>";
   }).join("");
@@ -1107,7 +1298,9 @@ function renderQuota() {
     "</div></div>");
   if (document.activeElement !== $("cap")) $("cap").value = cap;
   $("capbar").className = "bigbar " + lvl;
-  $("capbar").firstElementChild.style.width = pct + "%";
+  var capfill = $("capbar").firstElementChild;   // 0% must be empty, not a speck
+  capfill.hidden = !(pct > 0);
+  capfill.style.width = (pct > 0 ? pct : 0) + "%";
   $("capline").textContent = "已用 " + money(spent) + " / " + money(cap) +
     "（" + pct.toFixed(1) + "%）。超过上限的请求会被直接拒绝，不会扣钱。";
   var P = S.prices || {}, rows = "";
@@ -1151,7 +1344,8 @@ async function refresh() {
   $("bal").textContent = S.balance == null ? "不可用" : money(S.balance);
   var cap = (S.limits && S.limits.global_cap_usd) || 0;
   var pct = cap > 0 ? Math.min(100, (S.spent || 0) / cap * 100) : 0;
-  $("meterfill").style.width = pct + "%";
+  $("meterfill").hidden = !(pct > 0);
+  $("meterfill").style.width = (pct > 0 ? pct : 0) + "%";
   $("meter").className = "meter " + (pct >= 100 ? "bad" : pct >= 80 ? "warn" : "");
   document.querySelector(".balchip").title =
     "已花 " + money(S.spent) + " / 上限 " + money(cap) + " —— 点开看额度明细";
@@ -1196,6 +1390,7 @@ document.addEventListener("click", function (ev) {
   var a = ev.target.closest("[data-act]");
   if (!a) return;
   var act = a.dataset.act;
+  if (act === "ext") return;   // outbound fal.ai link: let the browser handle it
   if (act === "src") useAsSource(a.dataset.file);
   else if (act === "clearsrc") { sourceImage = null; renderSource(); estimate(); }
   else if (act === "example") {
