@@ -187,6 +187,9 @@ def main(argv=None) -> int:
     sub.add_parser("balance", help="print fal.ai account balance")
     p_dash = sub.add_parser("dash", help="serve the observation dashboard")
     p_dash.add_argument("--port", type=int, default=7799)
+    p_dash.add_argument("--host", default="127.0.0.1",
+                        help="bind address; 0.0.0.0 exposes the dashboard "
+                             "(including paid generation) to the whole network")
     p_dash.add_argument("--workdir", default="runs")
     args = ap.parse_args(argv)
 
@@ -196,7 +199,7 @@ def main(argv=None) -> int:
         return 0
     if args.cmd == "dash":
         from .dashboard import serve
-        return serve(Path(args.workdir), args.port)
+        return serve(Path(args.workdir), args.port, host=args.host)
 
     spec = load_job(args.job)
     workdir = Path(args.workdir) / spec.name

@@ -324,12 +324,16 @@ def make_handler(runs_root: Path, playground: Playground):
     return Handler
 
 
-def serve(runs_root: Path, port: int) -> int:
+def serve(runs_root: Path, port: int, host: str = "127.0.0.1") -> int:
     runs_root.mkdir(parents=True, exist_ok=True)
     playground = Playground(runs_root)
-    httpd = ThreadingHTTPServer(("127.0.0.1", port),
+    httpd = ThreadingHTTPServer((host, port),
                                 make_handler(runs_root, playground))
-    print(f"reelforge dashboard: http://127.0.0.1:{port}  (runs root: {runs_root})")
+    print(f"reelforge dashboard: http://{host}:{port}  (runs root: {runs_root})")
+    if host != "127.0.0.1":
+        print("WARNING: bound to a non-loopback address — anyone on this network "
+              "can open the page AND spend your fal balance via the playground. "
+              "The machine-wide cap in runs/limits.json is the only brake.")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
