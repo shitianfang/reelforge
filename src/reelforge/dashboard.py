@@ -32,12 +32,14 @@ MODEL_INFO = CATALOG
 
 DEFAULT_MODEL = {"image": "image_fast", "video": "video_h3_turbo", "music": "music"}
 
+# Chinese punctuation only, no spaced dashes: these strings are rendered as-is
+# under the style picker (and their head, before "：", is the display name).
 STYLE_INFO = {
-    "contrast-noir": "黑色电影风：顶光硬打、深黑背景、橙青撞色 — 高级感产品、人物",
-    "rim-glow": "轮廓光风：背后打光勾出发光边缘 — 手表、数码、深色产品特写",
-    "neon-street": "赛博霓虹街头：品红加青色霓虹、湿地反光 — 宠物、人物动作戏",
-    "pov-pet": "宠物第一视角：胸背带运动相机、鱼眼、抖动 — 爆款宠物 POV",
-    "pov-vlog": "角色自拍 vlog：自拍杆视角 — 雪人、怪物对镜头说话那类爆款",
+    "contrast-noir": "黑色电影风：顶光硬打、深黑背景、橙青撞色；适合高级感产品、人物",
+    "rim-glow": "轮廓光风：背后打光勾出发光边缘；适合手表、数码、深色产品特写",
+    "neon-street": "赛博霓虹街头：品红加青色霓虹、湿地反光；适合宠物、人物动作戏",
+    "pov-pet": "宠物第一视角：胸背带运动相机、鱼眼、抖动；适合爆款宠物 POV",
+    "pov-vlog": "角色自拍 vlog：自拍杆视角；适合雪人、怪物对镜头说话那类爆款",
 }
 
 _balance = {"t": 0.0, "v": None}
