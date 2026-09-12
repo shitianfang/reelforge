@@ -1,0 +1,20 @@
+# A pet's-eye action camera reel. The camera is never called "POV" in prompts;
+# the recipe states where it is physically mounted (that's the trick that works).
+name: pet-pov-demo
+style: pov-pet
+aspect: "9:16"
+budget_usd: 3.0
+n_variants: 3
+music:
+  prompt: "playful upbeat electro swing, strong steady beat, 120 bpm, energetic drop halfway"
+  duration_s: 24
+shots:
+  - subject: "a golden retriever with a red collar"
+    action: "bounding through tall grass at full speed"
+    scene: "sunlit meadow, trees rushing past at the edges"
+  - subject: "a golden retriever with a red collar"
+    action: "skidding around a corner chasing a thrown ball"
+    scene: "backyard lawn, garden fence blurring past"
+  - subject: "a golden retriever with a red collar"
+    action: "leaping off a wooden dock into a lake"
+    scene: "water surface rushing closer, splash on landing"

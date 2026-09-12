@@ -1,0 +1,23 @@
+# High-contrast beat-synced montage: every cut lands on a detected beat,
+# the drop shot gets the action peak.
+name: neon-cat-demo
+style: neon-street
+aspect: "9:16"
+budget_usd: 3.0
+n_variants: 3
+music:
+  prompt: "dark aggressive phonk, 130 bpm, hard-hitting drop, heavy 808 cowbell"
+  duration_s: 30
+shots:
+  - subject: "a black cat with amber eyes"
+    action: "stalking along a rain-slicked ledge"
+    scene: "neon signs reflected in puddles below"
+  - subject: "a black cat with amber eyes"
+    action: "sprinting toward the camera"
+    scene: "narrow alley walls streaked with magenta neon"
+  - subject: "a black cat with amber eyes"
+    action: "leaping between rooftops in slow motion"
+    scene: "city skyline glowing cyan behind"
+  - subject: "a black cat with amber eyes"
+    action: "landing and turning to stare into the lens"
+    scene: "steam rising through neon light"
