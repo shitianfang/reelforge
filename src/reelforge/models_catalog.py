@@ -74,6 +74,14 @@ CATALOG = [
      "pros": "原生对白、音效、口型同步，4–12 秒",
      "cons": "比 H3 Turbo 贵，价格按 token 略难心算（页面会帮你算）",
      "usage": "要角色开口说话的镜头选它"},
+    {"id": "video_seedance25", "kind": "video", "family": "seedance25", "selectable": True,
+     "endpoint": "bytedance/seedance-2.5/image-to-video",
+     "endpoint_t2v": "bytedance/seedance-2.5/text-to-video", "tier": "旗舰档",
+     "label": "Seedance 2.5（字节·旗舰）",
+     "price": "$0.0214/千 token，720p 5 秒约 $2.31；1080p 费率以 fal 页为准",
+     "pros": "唯一能原生一次生成 30 秒的档；音画同一空间生成、口型同步最好；提示词服从再提 20%",
+     "cons": "贵：720p 约 $0.47/秒，是 1.5 Pro 的 9 倍",
+     "usage": "15–30 秒一镜到底、或口型要求苛刻的重点片才用"},
     {"id": "video_hailuo23", "kind": "video", "family": None, "selectable": False,
      "endpoint": "fal-ai/minimax/hailuo-2.3/standard/image-to-video", "tier": "上一代",
      "label": "Hailuo 2.3（MiniMax·上一代）", "price": "见 fal 模型页",
@@ -149,10 +157,12 @@ def est_for(model_id: str, *, width: int = 0, height: int = 0,
     if fam == "h3":
         table = H3_TURBO_PRICE if model_id == "video_h3_turbo" else H3_MAX_PRICE
         return table[resolution] * duration
-    if fam == "seedance":
+    if fam in ("seedance", "seedance25"):
         w, h = SEEDANCE_DIMS[resolution]
-        tokens = w * h * 24 * max(4, min(12, duration)) / 1024  # 4-12s clamp mirrors the adapter
-        return tokens / 1_000_000 * 2.4  # with native audio
+        max_s = 12 if fam == "seedance" else 30  # duration clamps mirror the adapters
+        tokens = w * h * 24 * max(4, min(max_s, duration)) / 1024
+        # 1.5 Pro: $2.4/M tokens with audio; 2.5: $0.0214/1K tokens
+        return tokens / 1_000_000 * 2.4 if fam == "seedance" else tokens * 0.0000214
     if fam == "mmx_music":
         return 0.002 * duration
     if fam == "el_music":

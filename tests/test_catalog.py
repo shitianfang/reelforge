@@ -27,8 +27,11 @@ def test_estimates_match_known_prices():
     assert est_for("image_flux2", width=1000, height=1000) == pytest.approx(0.012)
     assert est_for("video_h3_turbo", duration=10, resolution="768P") == pytest.approx(0.10)
     assert est_for("video_h3_max", duration=10, resolution="768P") == pytest.approx(0.20)
-    # fal's own example: Seedance 720p 5s with audio ≈ $0.26
+    # fal's own examples: Seedance 1.5 Pro 720p 5s ≈ $0.26; Seedance 2.5 720p 5s ≈ $2.31
     assert est_for("video_seedance", duration=5, resolution="768P") == pytest.approx(0.26, abs=0.02)
+    assert est_for("video_seedance25", duration=5, resolution="768P") == pytest.approx(2.31, abs=0.02)
+    assert est_for("video_seedance25", duration=30, resolution="480P") == pytest.approx(
+        854 * 480 * 24 * 30 / 1024 * 0.0000214, rel=0.01)
     assert est_for("music_el", duration=60) == pytest.approx(0.60)
 
 

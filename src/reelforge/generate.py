@@ -70,10 +70,11 @@ def gen_video(client, prompt: str, seconds: int, size: tuple[int, int],
     if client.dry:
         return media.synth_clip(dest, size, seconds, variant)
     m = get_model(model_id or "video_h3_turbo")
-    if m["family"] == "seedance":
+    if m["family"] in ("seedance", "seedance25"):
+        max_s = 12 if m["family"] == "seedance" else 30
         payload = {
             "prompt": prompt,
-            "duration": str(max(4, min(12, seconds))),
+            "duration": str(max(4, min(max_s, seconds))),
             "resolution": {"480P": "480p", "768P": "720p", "1080P": "1080p"}[resolution],
             "aspect_ratio": _nearest_aspect(size) if size != (0, 0) else "9:16",
             "generate_audio": True,

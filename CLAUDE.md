@@ -2,6 +2,8 @@ Layout: src/reelforge/{runner,job,beats,promptcraft,judge,generate,assemble,medi
 
 Commands: `uv run pytest` (no keys); `uv run reelforge run <job.yaml> --dry-run`; `uv run reelforge dash` (port 7799); live runs need FAL_KEY in .env (gitignored — never commit it).
 
+Creative work (planning jobs, writing shot lists, judging keyframes/clips): load the `director` skill first.
+
 Rules:
 - Endpoint params come from fal's public OpenAPI: `curl "https://fal.ai/api/openapi/queue/openapi.json?endpoint_id=<slug>"` — check it before the first live call of a model (`VERIFY` marks the untested ones; music lyrics convention still unverified).
 - Run pytest + a dry run before every push; after dashboard changes, also screenshot the page (playwright via `uv run --with playwright`).
