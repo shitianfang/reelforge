@@ -62,6 +62,21 @@ font-size:12px;overflow-x:auto;max-height:220px}
 </div>
 
 <div class="card">
+  <details open>
+  <summary style="font-size:15px;font-weight:600">新手指南 — 第一次用先看这里</summary>
+  <div style="margin-top:10px;line-height:1.9">
+  <b>三步上手:</b><br>
+  ① 下面「试玩台」选 <b>图片</b>:在"主体/动作/场景"里填你想要的画面(中文也行,但英文效果更好),选一个风格模板,点「套用模板」自动拼好专业提示词,再点「生成」— 几秒后图就出现在下方,一张只要几分钱。<br>
+  ② 图满意了,点图片卡上的「<b>用这张生视频</b>」,时长选 4~5 秒、分辨率选 480P 先试(不到两毛五),满意再用 768P 重生成正式版。<br>
+  ③ 想全自动出带配乐、卡点剪辑的成片:让 Claude Code 跑批量任务(reelforge run),然后回这个页面看进度、选关键帧、看成片。<br>
+  <b>花钱规则:</b>每次生成前页面都会显示「预计花费」;所有消费(包括批量任务)都受顶部「总额度上限」保护,超了会直接拒绝,不会偷偷扣钱。余额是 fal 账户实时余额。<br>
+  <b>提示词技巧:</b>写具体、别写虚词 — 不要"好看的氛围感",要"主体是什么 + 光从哪来(硬光/逆光轮廓光)+ 什么颜色撞什么颜色 + 什么镜头(35mm/微距)"。风格模板已经把这些打包好了,新手直接套模板再微调即可。<br>
+  <b>名词解释:</b>「文生视频」=一句话直接出视频,快但不可控;「从图片生成」=先挑一张满意的图再让它动起来,可控、适合正经做内容;「drop」=音乐情绪最高点,批量任务会自动把最炸的镜头切在这里。
+  </div>
+  </details>
+</div>
+
+<div class="card">
   <h2>试玩台 — 自己写提示词或套模板,单条生成</h2>
   <div class="tabs">
     <button id="tab-image" class="on" onclick="setKind('image')">图片</button>
@@ -75,6 +90,7 @@ font-size:12px;overflow-x:auto;max-height:220px}
     <input id="scene" placeholder="场景" style="width:170px">
     <button onclick="compose()">套用模板 → 生成提示词</button>
   </div>
+  <div class="row dim" id="styledesc"></div>
   <div class="row"><textarea id="prompt" placeholder="提示词(可自由编辑;英文效果最好)"></textarea></div>
   <div class="row" id="p-image">
     <label>模型</label><select id="imodel">
@@ -114,8 +130,8 @@ font-size:12px;overflow-x:auto;max-height:220px}
 </div>
 
 <div class="card">
-  <h2>模型与价格</h2>
-  <table><thead><tr><th>用途</th><th>模型</th><th>价格</th><th>说明</th></tr></thead>
+  <h2>模型手册 — 每个模型的优缺点和用法</h2>
+  <table><thead><tr><th style="width:34%">模型 / 价格</th><th>优缺点与怎么用</th></tr></thead>
   <tbody id="models"></tbody></table>
 </div>
 
@@ -253,12 +269,16 @@ async function refresh(){
   if(document.activeElement!==$('cap'))$('cap').value=S.limits.global_cap_usd;
   const days=Math.ceil((new Date(S.discount_deadline)-Date.now())/864e5);
   $('discount').textContent=days>0?`⚠ H3 视频 75% 折扣还剩 ${days} 天(${S.discount_deadline} 后涨 4 倍)`:'H3 首发折扣已结束(价格 ×4)';
-  if(!$('style').options.length)
+  if(!$('style').options.length){
     for(const k of Object.keys(S.styles))$('style').add(new Option(k,k));
+    $('style').onchange=()=>{$('styledesc').textContent=S.style_info[$('style').value]||'';};
+    $('style').onchange();}
   $('models').innerHTML=S.models.map(m=>
-    `<tr><td>${{image:'图片',video:'视频',music:'音乐'}[m.kind]}</td>
-    <td>${m.label}<div class="dim">${m.endpoint}</div></td>
-    <td>${m.price}</td><td class="dim">${m.note}</td></tr>`).join('');
+    `<tr><td><b>${m.label}</b><div class="dim">${m.price}</div>
+    <div class="dim" style="font-size:11px">${m.endpoint}</div></td>
+    <td><div><span style="color:var(--ok)">优点</span> ${m.pros}</div>
+    <div><span style="color:var(--bad)">缺点</span> ${m.cons}</div>
+    <div><span style="color:var(--accent)">用法</span> ${m.usage}</div></td></tr>`).join('');
   $('results').innerHTML=S.playground.map(tile).join('');
   $('jobs').innerHTML=S.jobs.map(jobRow).join('');
   estimate();}

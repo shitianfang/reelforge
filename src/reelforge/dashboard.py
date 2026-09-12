@@ -29,21 +29,39 @@ HTML = Path(__file__).parent / "dashboard.html"
 
 MODEL_INFO = [
     {"id": "image_fast", "kind": "image", "endpoint": FAL_MODELS["image_fast"],
-     "label": "Z-Image Turbo", "price": "$0.005/百万像素",
-     "note": "阿里 6B,~3 秒出图,草稿与选型首选"},
+     "label": "Z-Image Turbo(图片·草稿档)", "price": "$0.005/百万像素,一张竖屏草稿约 ¥0.03",
+     "pros": "便宜到可以随便试、约 3 秒出图、真实感不错",
+     "cons": "细节和文字渲染不如高档模型,大图偶尔糊",
+     "usage": "默认就用它:一个想法先生 3~5 张挑,不心疼钱"},
     {"id": "image_high", "kind": "image", "endpoint": FAL_MODELS["image_high"],
-     "label": "Seedream 5 Lite", "price": "$0.035/张",
-     "note": "字节,最高 3072²,商业质感成片档"},
+     "label": "Seedream 5 Lite(图片·质量档)", "price": "$0.035/张(约 ¥0.25)",
+     "pros": "商业海报质感、画面里写字最准、最高 3072² 大图",
+     "cons": "比草稿档贵 7 倍,速度稍慢",
+     "usage": "草稿档挑中构图后,同一段提示词换它出正式版"},
     {"id": "video_t2v", "kind": "video", "endpoint": FAL_MODELS["video_t2v"],
-     "label": "H3 Max Turbo 文生视频", "price": "480P $0.00625/s · 768P $0.01/s · 1080P $0.02/s",
-     "note": f"MiniMax,带音频;75% 首发折扣 {DISCOUNT_DEADLINE} 到期后 ×4"},
+     "label": "H3 视频·文字直接生成", "price": "480P $0.00625/秒 · 768P $0.01/秒 · 1080P $0.02/秒",
+     "pros": "一句话直接出带声音的视频,最省事",
+     "cons": "画面不可控,同一句话每次结果差很多",
+     "usage": f"试想法用 480P + 4~5 秒(不到 ¥0.25);⚠ 折扣 {DISCOUNT_DEADLINE} 到期后涨 4 倍"},
     {"id": "video_i2v", "kind": "video", "endpoint": FAL_MODELS["video_i2v"],
-     "label": "H3 Max Turbo 图生视频", "price": "同文生视频",
-     "note": "从选定关键帧生成,运动更可控"},
+     "label": "H3 视频·从图片生成", "price": "同左",
+     "pros": "画面=你选中的那张图,构图颜色完全可控,系列内容主角不走样",
+     "cons": "要先有一张满意的图,多一步",
+     "usage": "正经做内容走这条:图便宜先挑好,再花视频的钱"},
     {"id": "music", "kind": "music", "endpoint": FAL_MODELS["music"],
-     "label": "MiniMax Music 3", "price": "$0.002/s",
-     "note": "配乐;30 秒约 $0.06"},
+     "label": "MiniMax Music 3(配乐)", "price": "$0.002/秒,30 秒约 ¥0.43",
+     "pros": "便宜,描述曲风即可,可写歌词",
+     "cons": "不能指定精确 BPM,节拍靠系统检测",
+     "usage": "批量任务会自动先生成音乐再卡点;单独试听在试玩台选\"音乐\""},
 ]
+
+STYLE_INFO = {
+    "contrast-noir": "黑色电影风:顶光硬打、深黑背景、橙青撞色 — 高级感产品/人物",
+    "rim-glow": "轮廓光风:背后打光勾出发光边缘 — 手表、数码、深色产品特写",
+    "neon-street": "赛博霓虹街头:品红+青色霓虹、湿地反光 — 宠物/人物动作戏",
+    "pov-pet": "宠物第一视角:胸背带运动相机、鱼眼、抖动 — 爆款宠物 POV",
+    "pov-vlog": "角色自拍 vlog:自拍杆视角 — 雪人/怪物对镜头说话那类爆款",
+}
 
 _balance = {"t": 0.0, "v": None}
 
@@ -244,6 +262,7 @@ def make_handler(runs_root: Path, playground: Playground):
                         "resolutions": list(RESOLUTIONS),
                         "models": MODEL_INFO,
                         "styles": {k: v for k, v in STYLES.items()},
+                        "style_info": STYLE_INFO,
                         "jobs": scan_jobs(root),
                         "playground": playground.list()[:60],
                     })
