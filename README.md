@@ -64,17 +64,21 @@ A local console on 127.0.0.1 for everything you'd otherwise dig out of files:
   keyframe candidate picking for the review gate, run logs, final playback;
 - the model/price table, including the H3 launch-discount countdown.
 
-## Models (current defaults)
+## Models
 
-| Role | Model | Price | Notes |
-|---|---|---|---|
-| image, draft tier | Z-Image Turbo | $0.005/MP | ~3s per image |
-| image, quality tier | Seedream 5 Lite | $0.035/image | up to 3072² |
-| video (t2v + i2v) | MiniMax H3 Max Turbo | 480P $0.00625/s · 768P $0.01/s · 1080P $0.02/s | **75% launch discount ends 2026-09-14**, then ×4 |
-| music | MiniMax Music 3 | $0.002/s | |
+The catalog lives in `src/reelforge/models_catalog.py` — 17 entries, 9 of
+them runnable from the playground with real per-call cost estimators:
 
-Endpoint ids live in `src/reelforge/config.py` only; input params were
-verified against fal's public OpenAPI schemas.
+| Kind | Runnable now | Display-only (adapters pending) |
+|---|---|---|
+| image | Z-Image Turbo ($0.005/MP), FLUX 2 ($0.012/MP), Nano Banana ($0.039), Seedream 5 Lite ($0.035) | GPT Image 1.5, Qwen Image |
+| video | H3 Max Turbo, H3 Max (2× turbo, higher fidelity), Seedance 1.5 Pro (native dialogue/SFX, ~$0.26/720p·5s) | Hailuo 2.3, Kling 3, Veo 3 Fast, Sora 2 |
+| music/audio | MiniMax Music 3 ($0.002/s), ElevenLabs Music ($0.6/min) | ElevenLabs TTS & sound effects |
+
+H3-family prices carry a **75% launch discount ending 2026-09-14** (then ×4).
+Endpoint slugs and input schemas were verified against fal's public OpenAPI
+(`https://fal.ai/api/openapi/queue/openapi.json?endpoint_id=<slug>`); the
+pipeline's own defaults stay in `src/reelforge/config.py`.
 
 ## Job spec
 

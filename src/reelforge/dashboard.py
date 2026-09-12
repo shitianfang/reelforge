@@ -19,48 +19,25 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from . import generate
-from .config import DISCOUNT_DEADLINE, FAL_MODELS, PRICES, RESOLUTIONS, fal_key
+from .config import DISCOUNT_DEADLINE, PRICES, RESOLUTIONS, fal_key
 from .fal import FalClient, get_balance
 from .job import (BudgetExceeded, global_charge, ledger_total, load_limits,
                   save_limits)
+from .models_catalog import CATALOG, est_for, get_model
 from .promptcraft import STYLES, ShotBrief, image_prompt, lint, video_prompt
 
 HTML = Path(__file__).parent / "dashboard.html"
 
-MODEL_INFO = [
-    {"id": "image_fast", "kind": "image", "endpoint": FAL_MODELS["image_fast"],
-     "label": "Z-Image Turbo(图片·草稿档)", "price": "$0.005/百万像素,一张竖屏草稿约 ¥0.03",
-     "pros": "便宜到可以随便试、约 3 秒出图、真实感不错",
-     "cons": "细节和文字渲染不如高档模型,大图偶尔糊",
-     "usage": "默认就用它:一个想法先生 3~5 张挑,不心疼钱"},
-    {"id": "image_high", "kind": "image", "endpoint": FAL_MODELS["image_high"],
-     "label": "Seedream 5 Lite(图片·质量档)", "price": "$0.035/张(约 ¥0.25)",
-     "pros": "商业海报质感、画面里写字最准、最高 3072² 大图",
-     "cons": "比草稿档贵 7 倍,速度稍慢",
-     "usage": "草稿档挑中构图后,同一段提示词换它出正式版"},
-    {"id": "video_t2v", "kind": "video", "endpoint": FAL_MODELS["video_t2v"],
-     "label": "H3 视频·文字直接生成", "price": "480P $0.00625/秒 · 768P $0.01/秒 · 1080P $0.02/秒",
-     "pros": "一句话直接出带声音的视频,最省事",
-     "cons": "画面不可控,同一句话每次结果差很多",
-     "usage": f"试想法用 480P + 4~5 秒(不到 ¥0.25);⚠ 折扣 {DISCOUNT_DEADLINE} 到期后涨 4 倍"},
-    {"id": "video_i2v", "kind": "video", "endpoint": FAL_MODELS["video_i2v"],
-     "label": "H3 视频·从图片生成", "price": "同左",
-     "pros": "画面=你选中的那张图,构图颜色完全可控,系列内容主角不走样",
-     "cons": "要先有一张满意的图,多一步",
-     "usage": "正经做内容走这条:图便宜先挑好,再花视频的钱"},
-    {"id": "music", "kind": "music", "endpoint": FAL_MODELS["music"],
-     "label": "MiniMax Music 3(配乐)", "price": "$0.002/秒,30 秒约 ¥0.43",
-     "pros": "便宜,描述曲风即可,可写歌词",
-     "cons": "不能指定精确 BPM,节拍靠系统检测",
-     "usage": "批量任务会自动先生成音乐再卡点;单独试听在试玩台选\"音乐\""},
-]
+MODEL_INFO = CATALOG
+
+DEFAULT_MODEL = {"image": "image_fast", "video": "video_h3_turbo", "music": "music"}
 
 STYLE_INFO = {
-    "contrast-noir": "黑色电影风:顶光硬打、深黑背景、橙青撞色 — 高级感产品/人物",
-    "rim-glow": "轮廓光风:背后打光勾出发光边缘 — 手表、数码、深色产品特写",
-    "neon-street": "赛博霓虹街头:品红+青色霓虹、湿地反光 — 宠物/人物动作戏",
-    "pov-pet": "宠物第一视角:胸背带运动相机、鱼眼、抖动 — 爆款宠物 POV",
-    "pov-vlog": "角色自拍 vlog:自拍杆视角 — 雪人/怪物对镜头说话那类爆款",
+    "contrast-noir": "黑色电影风：顶光硬打、深黑背景、橙青撞色 — 高级感产品、人物",
+    "rim-glow": "轮廓光风：背后打光勾出发光边缘 — 手表、数码、深色产品特写",
+    "neon-street": "赛博霓虹街头：品红加青色霓虹、湿地反光 — 宠物、人物动作戏",
+    "pov-pet": "宠物第一视角：胸背带运动相机、鱼眼、抖动 — 爆款宠物 POV",
+    "pov-vlog": "角色自拍 vlog：自拍杆视角 — 雪人、怪物对镜头说话那类爆款",
 }
 
 _balance = {"t": 0.0, "v": None}
@@ -78,15 +55,18 @@ def balance_cached() -> float | None:
 
 def playground_estimate(req: dict) -> float:
     kind = req["kind"]
-    if kind == "image":
-        return generate.est_image((int(req.get("width", 720)), int(req.get("height", 1280))),
-                                  "high" if req.get("model") == "image_high" else "fast")
-    if kind == "video":
-        return generate.est_video(int(req.get("duration", 5)),
-                                  req.get("resolution", "768P"))
-    if kind == "music":
-        return generate.est_music(int(req.get("duration", 30)))
-    raise ValueError(f"unknown kind {kind}")
+    if kind not in DEFAULT_MODEL:
+        raise ValueError(f"unknown kind {kind}")
+    model_id = req.get("model") or DEFAULT_MODEL[kind]
+    m = get_model(model_id)
+    if m["kind"] != kind:
+        raise ValueError(f"model {model_id} is a {m['kind']} model, not {kind}")
+    if not m["selectable"]:
+        raise ValueError(f"{m['label']} 暂未接入一键生成(仅展示)")
+    return est_for(model_id,
+                   width=int(req.get("width", 720)), height=int(req.get("height", 1280)),
+                   duration=int(req.get("duration", 5 if kind == "video" else 30)),
+                   resolution=req.get("resolution", "768P"))
 
 
 class Playground:
@@ -140,11 +120,11 @@ class Playground:
             client = FalClient(fal_key())
             dest = self.runs_root / rec["file"]
             p, kind = rec["params"], rec["kind"]
+            model_id = p.get("model") or DEFAULT_MODEL[kind]
             if kind == "image":
                 generate.gen_image(client, rec["prompt"],
                                    (int(p.get("width", 720)), int(p.get("height", 1280))),
-                                   dest,
-                                   quality="high" if p.get("model") == "image_high" else "fast")
+                                   dest, model_id=model_id)
             elif kind == "video":
                 src = p.get("source_image")
                 image = self.runs_root / src if src else None
@@ -152,10 +132,11 @@ class Playground:
                     raise FileNotFoundError(f"source image {src} not found")
                 generate.gen_video(client, rec["prompt"], int(p.get("duration", 5)),
                                    (0, 0), dest, image_path=image,
-                                   resolution=p.get("resolution", "768P"))
+                                   resolution=p.get("resolution", "768P"),
+                                   model_id=model_id)
             else:
                 generate.gen_music(client, rec["prompt"], int(p.get("duration", 30)),
-                                   dest, lyrics=p.get("lyrics", ""))
+                                   dest, lyrics=p.get("lyrics", ""), model_id=model_id)
             rec["status"] = "done"
         except Exception as e:  # surfaced on the card, not lost in a thread
             rec["status"] = "failed"
@@ -282,6 +263,10 @@ def make_handler(runs_root: Path, playground: Playground):
                 req = self._read_body()
                 if self.path == "/api/generate":
                     self._json(playground.submit(req))
+                elif self.path == "/api/estimate":
+                    # same request shape as /api/generate, same estimator, no
+                    # spend: the cost the page shows is the cost it will charge
+                    self._json({"est_usd": round(playground_estimate(req), 6)})
                 elif self.path == "/api/compose":
                     brief = ShotBrief(subject=req.get("subject", ""),
                                       action=req.get("action", ""),
