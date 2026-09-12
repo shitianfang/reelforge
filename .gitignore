@@ -6,3 +6,4 @@ runs/
 dist/
 *.egg-info/
 .env
+HANDOFF.md
