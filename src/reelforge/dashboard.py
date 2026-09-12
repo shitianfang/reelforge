@@ -71,6 +71,33 @@ def playground_estimate(req: dict) -> float:
                    resolution=req.get("resolution", "768P"))
 
 
+CAP_MAX_USD = 10_000.0
+
+
+class BadRequest(ValueError):
+    """Client sent a value the server refuses to store (HTTP 400)."""
+
+
+def validate_cap(value) -> float:
+    """The global spend cap, or BadRequest — never a silently stored nonsense.
+
+    Negative caps used to be accepted and written to runs/limits.json, where
+    they read back as "everything is over budget": the UI said 上限为 0, the
+    file said -3.0, and the two never agreed again.
+    """
+    try:
+        cap = float(value)
+    except (TypeError, ValueError):
+        raise BadRequest(f"global_cap_usd must be a number, got {value!r}")
+    if cap != cap or cap in (float("inf"), float("-inf")):
+        raise BadRequest("global_cap_usd must be a finite number")
+    if cap < 0:
+        raise BadRequest(f"global_cap_usd must be >= 0, got {cap}")
+    if cap > CAP_MAX_USD:
+        raise BadRequest(f"global_cap_usd must be <= {CAP_MAX_USD:.0f}, got {cap}")
+    return round(cap, 2)
+
+
 class Playground:
     def __init__(self, runs_root: Path):
         self.dir = runs_root / "playground"
@@ -279,7 +306,12 @@ def make_handler(runs_root: Path, playground: Playground):
                     prompt = fn(brief, req.get("style", "contrast-noir"), **kwargs)
                     self._json({"prompt": prompt, "warnings": lint(prompt)})
                 elif self.path == "/api/limits":
-                    cap = float(req["global_cap_usd"])
+                    # The stored cap is what the charge path compares against, so
+                    # a bad value here silently disarms (negative = every request
+                    # rejected) or blows up the only brake. Reject it loudly and
+                    # answer with what is actually stored, so the page can never
+                    # show a cap the file does not hold.
+                    cap = validate_cap(req.get("global_cap_usd"))
                     save_limits(root, {"global_cap_usd": cap})
                     self._json({"ok": True, "global_cap_usd": cap})
                 elif self.path == "/api/review":
@@ -295,6 +327,8 @@ def make_handler(runs_root: Path, playground: Playground):
                     self._json({"error": "not found"}, 404)
             except BudgetExceeded as e:
                 self._json({"error": str(e)}, 402)
+            except BadRequest as e:
+                self._json({"error": str(e)}, 400)
             except Exception as e:
                 self._json({"error": f"{type(e).__name__}: {e}"}, 500)
 
