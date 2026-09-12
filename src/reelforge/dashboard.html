@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reelforge 工作台</title>
+<style>
+:root{--bg:#101216;--card:#171a20;--line:#262b34;--fg:#d7dce3;--dim:#8a93a1;
+--accent:#5b9dd9;--ok:#4caf7d;--warn:#d9a441;--bad:#d96b5b;}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.6 -apple-system,"Segoe UI",
+"PingFang SC","Microsoft YaHei",sans-serif;padding:20px;max-width:1180px;margin:0 auto}
+h1{font-size:18px;font-weight:600}
+h2{font-size:15px;font-weight:600;margin-bottom:10px;color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;
+padding:16px;margin-top:16px}
+.bar{display:flex;gap:24px;align-items:baseline;flex-wrap:wrap;margin-top:10px}
+.stat b{font-size:17px}.stat span{color:var(--dim);margin-right:6px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--dim);font-weight:500;white-space:nowrap}
+input,select,textarea,button{background:#0d0f13;color:var(--fg);border:1px solid var(--line);
+border-radius:6px;padding:6px 9px;font:inherit}
+textarea{width:100%;min-height:74px;resize:vertical}
+button{cursor:pointer}button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#0d0f13;border:none;font-weight:600;padding:7px 18px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.row label{color:var(--dim)}
+.tabs{display:flex;gap:6px}
+.tabs button{border-radius:6px 6px 0 0;border-bottom:none;color:var(--dim)}
+.tabs button.on{color:var(--fg);border-color:var(--accent);background:var(--card)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:12px}
+.tile{background:#0d0f13;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12px}
+.tile img,.tile video{width:100%;border-radius:5px;display:block;background:#000}
+.tile .p{color:var(--dim);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;
+-webkit-box-orient:vertical;overflow:hidden}
+.badge{display:inline-block;padding:1px 8px;border-radius:9px;font-size:12px}
+.b-run{background:#2a3550;color:#9db8e8}.b-done{background:#1d3a2c;color:#7fd0a2}
+.b-fail{background:#472723;color:#e09a8d}.b-wait{background:#453a1e;color:#e0c27f}
+.warn{color:var(--warn)}.err{color:var(--bad);white-space:pre-wrap}
+.dim{color:var(--dim)}
+.timeline{position:relative;height:26px;background:#0d0f13;border:1px solid var(--line);
+border-radius:5px;margin:8px 0}
+.cut{position:absolute;top:0;bottom:0;width:2px;background:var(--accent)}
+.cut.drop{background:var(--bad);width:3px}
+.kf-pick{outline:3px solid var(--ok)}
+.shotpick img{cursor:pointer;width:110px;border-radius:5px;margin:3px}
+details{margin-top:6px}summary{cursor:pointer;color:var(--accent)}
+pre{background:#0d0f13;border:1px solid var(--line);border-radius:6px;padding:8px;
+font-size:12px;overflow-x:auto;max-height:220px}
+</style>
+</head>
+<body>
+<h1>reelforge 工作台</h1>
+<div class="bar">
+  <div class="stat"><span>fal 余额</span><b id="balance">–</b></div>
+  <div class="stat"><span>累计消耗</span><b id="spent">–</b></div>
+  <div class="stat"><span>总额度上限</span>
+    <input id="cap" type="number" step="0.5" min="0" style="width:90px">
+    <button onclick="saveCap()">保存</button></div>
+  <div class="stat warn" id="discount"></div>
+</div>
+
+<div class="card">
+  <h2>试玩台 — 自己写提示词或套模板,单条生成</h2>
+  <div class="tabs">
+    <button id="tab-image" class="on" onclick="setKind('image')">图片</button>
+    <button id="tab-video" onclick="setKind('video')">视频</button>
+    <button id="tab-music" onclick="setKind('music')">音乐</button>
+  </div>
+  <div class="row" id="tmpl-row">
+    <label>风格模板</label><select id="style"></select>
+    <input id="subject" placeholder="主体(建议 5–7 词,系列内保持一致)" style="width:250px">
+    <input id="action" placeholder="动作" style="width:170px">
+    <input id="scene" placeholder="场景" style="width:170px">
+    <button onclick="compose()">套用模板 → 生成提示词</button>
+  </div>
+  <div class="row"><textarea id="prompt" placeholder="提示词(可自由编辑;英文效果最好)"></textarea></div>
+  <div class="row" id="p-image">
+    <label>模型</label><select id="imodel">
+      <option value="image_fast">Z-Image Turbo($0.005/MP)</option>
+      <option value="image_high">Seedream 5 Lite($0.035/张)</option></select>
+    <label>尺寸</label><select id="isize">
+      <option value="720x1280">720×1280 竖屏草稿</option>
+      <option value="1080x1920">1080×1920 竖屏</option>
+      <option value="1280x720">1280×720 横屏</option>
+      <option value="1080x1080">1080×1080 方形</option></select>
+  </div>
+  <div class="row" id="p-video" style="display:none">
+    <label>时长</label><input id="vdur" type="number" min="4" max="15" value="5" style="width:60px">秒
+    <label>分辨率</label><select id="vres">
+      <option>480P</option><option selected>768P</option><option>1080P</option></select>
+    <span id="srcimg" class="dim"></span>
+    <button id="srcclear" style="display:none" onclick="clearSrc()">清除参考图</button>
+  </div>
+  <div class="row" id="p-music" style="display:none">
+    <label>时长</label><input id="mdur" type="number" min="10" max="120" value="30" style="width:70px">秒
+    <input id="lyrics" placeholder="歌词(留空为纯音乐)" style="flex:1">
+  </div>
+  <div class="row">
+    <span>预计花费 <b id="est">$0</b></span>
+    <button class="primary" onclick="submitGen()">生成</button>
+    <span id="generr" class="err"></span>
+  </div>
+  <div class="grid" id="results"></div>
+</div>
+
+<div class="card">
+  <h2>批量任务(reelforge run)</h2>
+  <table><thead><tr><th>任务</th><th>流程</th><th>风格</th><th>进度</th>
+  <th>已花费</th><th>预算</th><th>预估全程</th><th>状态</th></tr></thead>
+  <tbody id="jobs"></tbody></table>
+  <div id="jobdetail"></div>
+</div>
+
+<div class="card">
+  <h2>模型与价格</h2>
+  <table><thead><tr><th>用途</th><th>模型</th><th>价格</th><th>说明</th></tr></thead>
+  <tbody id="models"></tbody></table>
+</div>
+
+<script>
+let S=null, kind='image', openJob=null, sourceImage=null;
+const $=id=>document.getElementById(id);
+const fmt=v=>v==null?'–':'$'+(+v).toFixed(v<0.1?4:2);
+const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function setKind(k){kind=k;
+  for(const t of ['image','video','music']){
+    $('tab-'+t).classList.toggle('on',t===k);
+    $('p-'+t).style.display=t===k?'':'none';}
+  $('tmpl-row').style.display=k==='music'?'none':'';
+  estimate();}
+
+function estimate(){if(!S)return;let e=0;const P=S.prices;
+  if(kind==='image'){
+    if($('imodel').value==='image_high')e=P.image_high;
+    else{const[w,h]=$('isize').value.split('x');e=P.image_fast_per_mp*w*h/1e6;}}
+  else if(kind==='video')e=P.video_per_s[$('vres').value]*(+$('vdur').value||5);
+  else e=P.music_per_s*(+$('mdur').value||30);
+  $('est').textContent=fmt(e);}
+for(const id of['imodel','isize','vdur','vres','mdur'])
+  document.addEventListener('change',ev=>{if(ev.target.id===id)estimate();});
+
+async function compose(){
+  const r=await fetch('/api/compose',{method:'POST',body:JSON.stringify({
+    kind:kind==='image'?'image':'video',style:$('style').value,
+    subject:$('subject').value,action:$('action').value,scene:$('scene').value})});
+  const d=await r.json();$('prompt').value=d.prompt;
+  $('generr').textContent=d.warnings?.length?'提示词包含模糊词: '+d.warnings.join(', '):'';}
+
+function useAsSource(file){sourceImage=file;setKind('video');
+  $('srcimg').textContent='参考图: '+file.split('/').pop();
+  $('srcclear').style.display='';window.scrollTo({top:0,behavior:'smooth'});}
+function clearSrc(){sourceImage=null;$('srcimg').textContent='';$('srcclear').style.display='none';}
+
+async function submitGen(){
+  $('generr').textContent='';
+  const req={kind,prompt:$('prompt').value};
+  if(kind==='image'){req.model=$('imodel').value;
+    const[w,h]=$('isize').value.split('x');req.width=+w;req.height=+h;}
+  else if(kind==='video'){req.duration=+$('vdur').value;req.resolution=$('vres').value;
+    if(sourceImage)req.source_image=sourceImage;}
+  else{req.duration=+$('mdur').value;req.lyrics=$('lyrics').value;}
+  const r=await fetch('/api/generate',{method:'POST',body:JSON.stringify(req)});
+  const d=await r.json();
+  if(d.error)$('generr').textContent=d.error;else refresh();}
+
+function tile(t){
+  let media='';const f='/files/'+t.file;
+  if(t.status==='done'){
+    if(t.kind==='image')media=`<img src="${f}" loading="lazy">`;
+    else if(t.kind==='video')media=`<video src="${f}" controls preload="metadata"></video>`;
+    else media=`<audio src="${f}" controls style="width:100%"></audio>`;}
+  const badge={running:'<span class="badge b-run">生成中</span>',
+    done:'<span class="badge b-done">完成</span>',
+    failed:'<span class="badge b-fail">失败</span>'}[t.status];
+  const act=(t.status==='done'&&t.kind==='image')
+    ?`<button onclick="useAsSource('${t.file}')">用这张生视频</button>`:'';
+  const err=t.error?`<div class="err">${esc(t.error)}</div>`:'';
+  return `<div class="tile">${media}<div>${badge} <span class="dim">${fmt(t.est_usd)}</span> ${act}</div>
+  <div class="p" title="${esc(t.prompt)}">${esc(t.prompt)}</div>${err}</div>`;}
+
+function jobRow(j){
+  const st=j.awaiting_review?'<span class="badge b-wait">待选图</span>'
+    :j.final?'<span class="badge b-done">已成片</span>'
+    :'<span class="badge b-run">进行中</span>';
+  const sp=j.spec||{};
+  return `<tr onclick="toggleJob('${j.name}')" style="cursor:pointer">
+  <td>${j.name}</td><td>${sp.flow||''}</td><td>${sp.style||''}</td>
+  <td class="dim">${(j.steps||[]).join(' → ')}</td>
+  <td>${fmt(j.cost_usd)}</td><td>${fmt(sp.budget_usd)}</td>
+  <td>${fmt(j.estimate_usd)}</td><td>${st}</td></tr>`;}
+
+async function toggleJob(name){
+  openJob=openJob===name?null:name;renderJobDetail();}
+
+async function renderJobDetail(){
+  const box=$('jobdetail');
+  if(!openJob){box.innerHTML='';return;}
+  const d=await(await fetch('/api/job/'+openJob)).json();
+  const st=d.state||{},done=st.done||{};
+  let h=`<h2 style="margin-top:16px">${openJob}</h2>`;
+  if(done.plan){
+    const total=done.plan[done.plan.length-1].end;
+    h+='<div class="timeline">'+done.plan.map(s=>
+      `<div class="cut ${s.on_drop?'drop':''}" style="left:${s.start/total*100}%" title="${s.start.toFixed(2)}s${s.on_drop?' (drop)':''}"></div>`).join('')+'</div>';
+    const bpm=(st.done.beats&&st.done.beats.bpm)?Math.round(st.done.beats.bpm):'?';
+    h+=`<div class="dim">切点全部落拍;红色为 drop。总长 ${total.toFixed(1)}s,bpm ${bpm}</div>`;}
+  if(d.review_request&&!d.review){
+    h+='<h2 style="margin-top:12px">选择每个镜头的关键帧(点击图片)</h2><div id="picks">';
+    for(const s of d.review_request.shots){
+      h+=`<div class="shotpick" data-shot="${s.index}"><div class="dim">镜头 ${s.index}</div>`+
+        s.candidates.map((c,i)=>{
+          const rel=c.substring(c.indexOf('runs/')>=0?c.indexOf('runs/')+5:0);
+          return `<img src="/files/${openJob}/assets/${c.split('/').pop()}" data-i="${i}" onclick="pick(this)">`;}).join('')+'</div>';}
+    h+='</div><div class="row"><button class="primary" onclick="submitReview()">提交选择并继续生成视频</button><span id="reverr" class="err"></span></div>';}
+  if(done.review&&!done.assemble)
+    h+=`<div class="row"><button class="primary" onclick="continueJob()">继续运行</button></div>`;
+  if(done.assemble)
+    h+=`<h2 style="margin-top:12px">成片</h2><video src="/files/${openJob}/final.mp4" controls style="max-width:340px;border-radius:8px"></video>`;
+  if(done.music)
+    h+=`<div class="row"><audio src="/files/${openJob}/assets/music.wav" controls></audio></div>`;
+  if(d.run_log_tail)h+=`<details><summary>运行日志</summary><pre>${esc(d.run_log_tail)}</pre></details>`;
+  box.innerHTML=h;}
+
+function pick(img){
+  for(const sib of img.parentElement.querySelectorAll('img'))sib.classList.remove('kf-pick');
+  img.classList.add('kf-pick');}
+
+async function submitReview(){
+  const chosen={};let missing=false;
+  for(const div of document.querySelectorAll('.shotpick')){
+    const sel=div.querySelector('img.kf-pick');
+    if(!sel){missing=true;continue;}
+    chosen[div.dataset.shot]=+sel.dataset.i;}
+  if(missing){$('reverr').textContent='每个镜头都要选一张';return;}
+  await fetch('/api/review',{method:'POST',body:JSON.stringify({job:openJob,chosen})});
+  await fetch('/api/continue',{method:'POST',body:JSON.stringify({job:openJob})});
+  renderJobDetail();}
+
+async function continueJob(){
+  await fetch('/api/continue',{method:'POST',body:JSON.stringify({job:openJob})});}
+
+async function saveCap(){
+  await fetch('/api/limits',{method:'POST',body:JSON.stringify({global_cap_usd:+$('cap').value})});
+  refresh();}
+
+async function refresh(){
+  const r=await fetch('/api/summary');S=await r.json();
+  $('balance').textContent=S.balance==null?'不可用':fmt(S.balance);
+  $('spent').textContent=fmt(S.spent);
+  if(document.activeElement!==$('cap'))$('cap').value=S.limits.global_cap_usd;
+  const days=Math.ceil((new Date(S.discount_deadline)-Date.now())/864e5);
+  $('discount').textContent=days>0?`⚠ H3 视频 75% 折扣还剩 ${days} 天(${S.discount_deadline} 后涨 4 倍)`:'H3 首发折扣已结束(价格 ×4)';
+  if(!$('style').options.length)
+    for(const k of Object.keys(S.styles))$('style').add(new Option(k,k));
+  $('models').innerHTML=S.models.map(m=>
+    `<tr><td>${{image:'图片',video:'视频',music:'音乐'}[m.kind]}</td>
+    <td>${m.label}<div class="dim">${m.endpoint}</div></td>
+    <td>${m.price}</td><td class="dim">${m.note}</td></tr>`).join('');
+  $('results').innerHTML=S.playground.map(tile).join('');
+  $('jobs').innerHTML=S.jobs.map(jobRow).join('');
+  estimate();}
+
+refresh();setInterval(refresh,3000);
+setInterval(()=>{if(openJob)renderJobDetail();},5000);
+</script>
+</body>
+</html>

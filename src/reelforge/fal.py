@@ -51,3 +51,17 @@ class DryRunClient:
     """Marker client: generation services synthesize local placeholders instead."""
 
     dry = True
+
+
+def get_balance(key: str) -> float | None:
+    """Account balance in USD via the dashboard's billing endpoint.
+
+    Undocumented but stable; return None rather than raise if it changes.
+    """
+    try:
+        r = httpx.get("https://rest.alpha.fal.ai/billing/user_balance",
+                      headers={"Authorization": f"Key {key}"}, timeout=10)
+        r.raise_for_status()
+        return float(r.text.strip())
+    except Exception:
+        return None

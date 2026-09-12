@@ -38,26 +38,54 @@ uv run pytest                      # no keys needed
 uv run reelforge run jobs/examples/beatcut.yaml --dry-run   # full pipeline, placeholder media
 ```
 
-Live runs need one key ([fal.ai](https://fal.ai/dashboard/keys)):
+Live runs need one key ([fal.ai](https://fal.ai/dashboard/keys)) in `.env` at
+the repo root (`FAL_KEY=...`) or exported:
 
 ```bash
-export FAL_KEY=...
 uv run reelforge run jobs/examples/pet-pov.yaml
-# exit code 3 = awaiting review: score runs/<name>/review_request.json
-# candidates, write review.json, re-run to continue. Or pass --auto.
-uv run reelforge status jobs/examples/pet-pov.yaml
+# exit code 3 = awaiting review: pick keyframes on the dashboard (or write
+# review.json by hand), then re-run / hit Continue. Or pass --auto.
+uv run reelforge balance
+uv run reelforge dash              # http://127.0.0.1:7799
 ```
 
-Before the first live run, confirm the endpoint slugs in
-`src/reelforge/config.py` against https://fal.ai/explore (marked `VERIFY`).
+## Dashboard (`reelforge dash`)
+
+A local console on 127.0.0.1 for everything you'd otherwise dig out of files:
+
+- live fal balance, all-jobs spend ledger, and an editable **machine-wide
+  spend cap** (`runs/limits.json`) that every generation — batch or
+  playground — is checked against before money leaves;
+- a **playground**: pick any model from the catalog, write a prompt or
+  compose one from the style recipes, see the cost estimate before
+  generating; image results get a "make video from this" button (H3
+  image-to-video), so image-first exploration is one click per step;
+- batch runs: step progress, the beat-grid timeline with cut/drop markers,
+  keyframe candidate picking for the review gate, run logs, final playback;
+- the model/price table, including the H3 launch-discount countdown.
+
+## Models (current defaults)
+
+| Role | Model | Price | Notes |
+|---|---|---|---|
+| image, draft tier | Z-Image Turbo | $0.005/MP | ~3s per image |
+| image, quality tier | Seedream 5 Lite | $0.035/image | up to 3072² |
+| video (t2v + i2v) | MiniMax H3 Max Turbo | 480P $0.00625/s · 768P $0.01/s · 1080P $0.02/s | **75% launch discount ends 2026-09-14**, then ×4 |
+| music | MiniMax Music 3 | $0.002/s | |
+
+Endpoint ids live in `src/reelforge/config.py` only; input params were
+verified against fal's public OpenAPI schemas.
 
 ## Job spec
 
 ```yaml
 name: neon-cat-demo        # run directory name
 style: neon-street         # prompt recipe: contrast-noir | rim-glow | neon-street | pov-pet | pov-vlog
+flow: image-first          # image-first (keyframes + review gate) | direct (text-to-video)
+image_quality: fast        # fast (Z-Image Turbo) | high (Seedream 5 Lite)
+resolution: 768P           # video tier: 480P | 768P | 1080P
 aspect: "9:16"             # 9:16 | 16:9 | 1:1
-budget_usd: 3.0            # hard cap; the run stops before exceeding it
+budget_usd: 3.0            # per-job cap; a machine-wide cap in runs/limits.json also applies
 n_variants: 3              # keyframe candidates per shot
 music:
   prompt: "dark aggressive phonk, 130 bpm, hard-hitting drop"

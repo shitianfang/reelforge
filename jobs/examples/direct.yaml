@@ -1,0 +1,18 @@
+# Direct flow: text-to-video, no keyframe/review stage — fastest and cheapest
+# way to explore a concept end to end.
+name: pov-vlog-direct
+style: pov-vlog
+flow: direct
+aspect: "9:16"
+resolution: 480P     # draft tier; re-run at 768P/1080P when the concept works
+budget_usd: 1.0
+music:
+  prompt: "lofi hip hop, relaxed but steady beat, subtle drop"
+  duration_s: 20
+shots:
+  - subject: "a scruffy yeti with kind eyes"
+    action: "talking to the camera while hiking"
+    scene: "misty pine forest trail at dawn"
+  - subject: "a scruffy yeti with kind eyes"
+    action: "showing off a found mushroom, laughing"
+    scene: "mossy clearing, shafts of morning light"
