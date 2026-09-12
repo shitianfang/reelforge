@@ -6,20 +6,24 @@
 <title>reelforge 工作台</title>
 <style>
 :root{
-  /* --faint is the floor for 11–12px labels: 5.2:1 on white. --faint-deco is
-     below the text floor and may only carry pure decoration (chevrons). */
-  --bg:#ffffff; --fg:#111114; --fg-2:#3f3f46; --muted:#71717a; --faint:#6b6b76;
-  /* --muted-2 is --muted's twin for text on a tinted (never white) ground:
-     #71717a on #f5f5f6 is only 4.44:1, this is 5.8:1 */
-  --muted-2:#5f5f6a;
+  /* THREE body greys, nothing between them: --fg for content, --fg-2 for
+     secondary content, --muted for labels and meta (7.0:1 on white, 5.8:1 on
+     the tinted --surface-2, so one token clears AA wherever it lands).
+     --faint-deco is below the text floor: pure decoration (chevrons) only. */
+  --page:#f7f7f9; --bg:#ffffff; --fg:#111114; --fg-2:#3f3f46; --muted:#5f5f6a;
   --faint-deco:#a1a1aa; --ph:#8e8e96; --ph-strong:#7c7c85;
-  --line:#e7e7ea; --line-2:#f1f1f3; --surface:#fafafa; --surface-2:#f5f5f6;
+  --line:#e7e7ea; --line-2:#f1f1f3; --surface:#fafafa; --surface-2:#f2f2f4;
   --accent:#4f46e5; --accent-weak:#eef0ff; --accent-line:#dfdefb;
+  /* ONE indigo ink for every badge, chip and accent label on a pale ground */
+  --ink:#3730a3;
   --ok:#15803d; --ok-bg:#f0fdf4; --warn:#b45309; --warn-bg:#fffbeb;
-  --bad:#b3261e; --bad-bg:#fef2f2;
+  --warn-line:#f0dcb4; --bad:#b3261e; --bad-bg:#fef2f2;
+  /* a blocked control is not a quiet secondary one: its own fill, ~2.6:1 */
+  --off-bg:#f4f4f6; --off-line:#ececef; --off-fg:#8a8a94;
   /* ---- token scales: nothing in this file invents its own value ----
      spacing: multiples of 4 only (4 / 8 / 12 / 16 / 20 / 24 / 32)
-     radius:  three values + the pill; circles use 50% */
+     radius:  three values + the pill; circles use 50%
+     type:    26 page · 18 section · 14 title · 13 body · 12 label */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px;
   --r-sm:6px; --r-md:8px; --r-lg:12px; --r-pill:999px;
   --sh:0 1px 2px rgba(17,17,20,.05);
@@ -28,8 +32,10 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
+/* the page ground is faintly tinted so a white card reads as a raised surface
+   and not as more page; every card also carries --sh */
 body{
-  background:var(--bg); color:var(--fg);
+  background:var(--page); color:var(--fg);
   font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,
        "Helvetica Neue","PingFang SC","Hiragino Sans GB","Microsoft YaHei",
        "WenQuanYi Zen Hei",Arial,sans-serif;
@@ -37,20 +43,34 @@ body{
   overflow-wrap:break-word;
 }
 :focus{outline:none}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
+/* ONE focus ring on the whole page — same width, same colour, same offset, on
+   custom controls and on native inputs alike (an input used to get only a 1px
+   border tint, which is not a ring). */
+:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px}
+:focus-visible{border-radius:var(--r-sm)}
+/* the page still animates by default; a reader who asked the OS for less
+   motion gets none of it */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:1ms !important;animation-iteration-count:1 !important;
+    transition-duration:1ms !important;scroll-behavior:auto !important}
+}
 img,video{display:block;max-width:100%}
 button,input,select,textarea{font:inherit;color:inherit}
 [hidden]{display:none !important}
 
 /* ---------- typography scale ----------
-   size:   12 (label/meta) · 13 (body) · 14 (title) · 18 (page)
-   weight: 400 body · 560 emphasis · 600 title · 640 page title + big number
-   Labels are Chinese: no uppercase (does nothing to 汉字) and no letter-spacing
-   (it loosens 汉字 into debris) — size and weight carry the hierarchy. */
-.lbl{font-size:12px;font-weight:600;color:var(--muted-2)}
-h1{font-size:18px;font-weight:640;letter-spacing:-.01em}
-h2{font-size:14px;font-weight:600}
+   size:   12 (label/meta) · 13 (body) · 14 (title) · 18 (section) · 26 (page)
+   weight: 400 body · 560 emphasis · 600 title/section · 700 page title
+   Labels are Chinese: no uppercase (does nothing to 汉字) and NO letter-spacing
+   anywhere Chinese can appear — negative tracking shatters 汉字 into debris.
+   Size and weight carry the hierarchy; only the latin wordmark is tracked. */
+.lbl{font-size:12px;font-weight:600;color:var(--muted)}
+h1{font-size:26px;font-weight:700;line-height:1.3}
+h2{font-size:16px;font-weight:600}
+.sec-title{font-size:18px;font-weight:600;color:var(--fg)}
 .sub,.small{font-size:13px;color:var(--muted)}
+.view-head .sub{font-size:14px}
 .dim{color:var(--muted)}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
 /* keyboard-only skip link: the first tab stop reaches the content, so a
@@ -76,7 +96,7 @@ h2{font-size:14px;font-weight:600}
       border-radius:var(--r-lg);padding:var(--s1);max-width:100%}
 .tab{background:none;border:0;cursor:pointer;padding:var(--s1) var(--s4);
      border-radius:var(--r-md);white-space:nowrap;
-     font-size:13px;color:var(--muted-2);transition:background var(--t),color var(--t)}
+     font-size:13px;color:var(--muted);transition:background var(--t),color var(--t)}
 .tab:hover{color:var(--fg);background:rgba(17,17,20,.045)}
 .tab.on,.tab.on:hover{color:var(--fg);background:#fff;font-weight:560;
                       box-shadow:0 1px 2px rgba(17,17,20,.08)}
@@ -85,17 +105,22 @@ h2{font-size:14px;font-weight:600}
          border:1px solid var(--line);border-radius:var(--r-pill);padding:var(--s1) var(--s3);
          transition:border-color var(--t),box-shadow var(--t)}
 .balchip:hover{border-color:#d4d4d8;box-shadow:var(--sh)}
-.balchip .k{font-size:12px;color:var(--muted-2)}
+.balchip .k{font-size:12px;color:var(--muted)}
 .balchip .v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 /* the wallet and the self-set cap are two different things: a rule separates
    them inside the chip so the meter never reads as part of the balance */
 .balchip .sep{width:1px;height:16px;background:var(--line);flex:none}
+/* the poll died: the chip stops presenting a stale number as live money */
+.balchip.stale{background:var(--surface-2);border-color:var(--line);opacity:.75}
+.balchip.stale .sep,.balchip.stale .meter,.balchip.stale .k.hide-xs{display:none}
+.balchip .stalemsg{font-size:12px;color:var(--warn);white-space:nowrap}
 .meter{width:52px;height:4px;border-radius:var(--r-pill);background:var(--line);
        overflow:hidden}
-/* no min-width: a floored sub-1% fill paints a purple speck that reads as
-   debris, so below 1% the fill is hidden outright and the number does the
-   talking. At exactly zero the track itself is the reading — see .zero. */
-.meter i{display:block;height:100%;width:0;border-radius:var(--r-pill);
+/* no 2% floor: a floored sub-1% fill painted a 2.5%-wide speck while the
+   caption said 「不到 0.1%」. The fill is the TRUE share, with a 1px hairline
+   minimum so a tenth of a cent is still visible without lying about its size.
+   At exactly zero the hatched track itself is the reading — see .zero. */
+.meter i{display:block;height:100%;width:0;min-width:1px;border-radius:var(--r-pill);
          background:var(--accent);transition:width 300ms ease}
 .meter.warn i{background:#d97706}.meter.bad i{background:var(--bad)}
 .meter.zero,.bigbar.zero{background:repeating-linear-gradient(
@@ -115,6 +140,9 @@ h2{font-size:14px;font-weight:600}
 .banner.bad{background:var(--bad-bg);border-bottom-color:#f6d7d4}
 .banner-in{max-width:1040px;margin:0 auto;padding:var(--s2) var(--s6);display:flex;
            align-items:center;gap:var(--s3);font-size:13px;color:var(--fg-2)}
+/* the sentence owns the row's width, so the way out sits at its end instead of
+   stranding 780px of empty tint to the right */
+.banner-in>#bannertext{flex:1 1 auto;min-width:0}
 .banner.warn .banner-in{color:#7c4a06}.banner.bad .banner-in{color:#8c221c}
 .banner b{font-variant-numeric:tabular-nums;font-weight:600;color:inherit}
 .banner .why{margin-left:var(--s3)}
@@ -123,18 +151,30 @@ h2{font-size:14px;font-weight:600}
              white-space:nowrap;opacity:.9;text-decoration:none}
 .banner .act:hover{opacity:1}
 /* the × sits with the text it closes, not 800px away at the far edge */
-.banner .x{background:none;border:0;cursor:pointer;color:var(--muted);
+.banner .x,.promo .x{background:none;border:0;cursor:pointer;color:var(--muted);
            font-size:15px;line-height:1;padding:var(--s1);border-radius:var(--r-sm);
            width:28px;height:28px;display:grid;place-items:center;flex:none}
-.banner .x:hover{color:var(--fg);background:rgba(17,17,20,.06)}
+.banner .x:hover,.promo .x:hover{color:var(--fg);background:rgba(17,17,20,.06)}
+
+/* the discount notice is not a page-level state: it lives INSIDE 创作, where
+   the price it quotes is spent, so switching tabs no longer jumps the page by
+   the banner's height */
+.promo{display:flex;align-items:center;gap:var(--s3);background:var(--accent-weak);
+       border:1px solid var(--accent-line);border-radius:var(--r-md);
+       padding:var(--s2) var(--s3);margin-bottom:var(--s4);font-size:13px;
+       color:var(--fg-2)}
+.promo b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+.promo .x{margin-left:auto}
 
 /* ---------- layout ---------- */
 .wrap{max-width:1040px;margin:0 auto;padding:var(--s7) var(--s6) 96px}
 .view-head{margin-bottom:var(--s5)}
 .view-head .sub{margin-top:var(--s1)}
-.card{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg)}
+/* a card is a surface: white on the tinted page, hairline, and one shadow
+   token. Flat is not the same thing as invisible. */
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);
+      box-shadow:var(--sh)}
 .card.pad{padding:var(--s5)}
-.elev{box-shadow:var(--sh)}
 .sec-head{display:flex;align-items:baseline;gap:var(--s3);margin:var(--s7) 0 var(--s3)}
 .row{display:flex;gap:var(--s3);align-items:center;flex-wrap:wrap}
 .spacer{flex:1}
@@ -148,39 +188,59 @@ input[type=text],input[type=number],select,textarea{
 input::placeholder,textarea::placeholder{color:var(--ph)}
 .prompt::placeholder{color:var(--ph-strong)}
 input:hover,select:hover,textarea:hover{border-color:#d9d9de}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(79,70,229,.12);outline:none}
+/* the SAME ring as every other control (see :focus-visible at the top): a
+   1px border-colour change was the only focus signal a native field used to
+   get, which is not a ring at all */
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px}
 select{appearance:none;-webkit-appearance:none;padding-right:var(--s7);cursor:pointer;
   background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2371717a' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 10px center}
+/* THREE button states, three different pictures — a reader never has to guess
+   which of two identical greys means 「不能点」:
+     primary   solid black fill, white text
+     secondary white fill + 1px border           (.btn)
+     disabled  flat --off-bg, no border contrast, ~2.6:1 text  (both forms) */
 .btn{background:#fff;border:1px solid var(--line);border-radius:var(--r-md);
      padding:var(--s2) var(--s3);font-size:13px;cursor:pointer;white-space:nowrap;
      transition:all var(--t);display:inline-flex;align-items:center;gap:var(--s2)}
-.btn:hover{border-color:#d0d0d6;background:var(--surface);box-shadow:var(--sh)}
-.btn:active{transform:translateY(.5px)}
+.btn:hover{border-color:#bfbfc8;background:#f0f0f3;box-shadow:var(--sh)}
+.btn:active{transform:translateY(.5px);background:#e8e8ec}
 .btn.primary{background:#111114;border-color:#111114;color:#fff;font-weight:560;
              padding:var(--s2) var(--s5)}
 .btn.primary:hover{background:#000;box-shadow:0 2px 10px rgba(17,17,20,.22)}
-/* A blocked primary is not faded-out: it keeps full contrast, loses the black
-   fill, and stays focusable (aria-disabled, not disabled) so the tooltip that
-   says WHY is reachable by keyboard and by tap. */
-.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none}
-.btn[aria-disabled=true],.btn.primary[aria-disabled=true]{background:var(--surface-2);
-  border-color:var(--line);color:var(--muted-2);cursor:not-allowed;box-shadow:none}
-.btn[aria-disabled=true]:hover{background:var(--surface-2);box-shadow:none}
+/* A blocked primary keeps FOCUS (aria-disabled, not disabled) so the tooltip
+   that says WHY is reachable by keyboard and by tap — but it no longer looks
+   like a secondary button that simply chose a quiet style. */
+.btn:disabled,.btn[aria-disabled=true],.btn.primary[aria-disabled=true]{
+  background:var(--off-bg);border-color:var(--off-line);color:var(--off-fg);
+  cursor:not-allowed;box-shadow:none;transform:none;font-weight:400}
+.btn:disabled:hover,.btn[aria-disabled=true]:hover{background:var(--off-bg);
+  border-color:var(--off-line);box-shadow:none}
 .btn.tiny{padding:var(--s1) var(--s2);font-size:12px;gap:var(--s1)}
 /* a link that acts inside the page: reads as a link, behaves as a button */
 .linkbtn{background:none;border:0;padding:0;cursor:pointer;color:var(--accent);
          font:inherit}
 .linkbtn:hover{text-decoration:underline}
+/* a custom box among custom pills, and a 44px-tall target on touch: the bare
+   16px native checkbox was both the odd control out and below the touch floor */
 .check{display:inline-flex;align-items:center;gap:var(--s2);cursor:pointer;
-       font-size:13px;color:var(--fg-2)}
-.check input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+       font-size:13px;color:var(--fg-2);background:#fff;border:1px solid var(--line);
+       border-radius:var(--r-pill);padding:var(--s1) var(--s3);min-height:34px;
+       transition:all var(--t)}
+.check:hover{border-color:#c8c8d0;background:var(--surface)}
+.check input{appearance:none;-webkit-appearance:none;width:18px;height:18px;flex:none;
+             border:1.5px solid #c2c2cb;border-radius:var(--r-sm);background:#fff;
+             cursor:pointer;transition:all var(--t)}
+.check input:checked{background:var(--accent) url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l2.6 2.6L9 1.2' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px 8px no-repeat;
+                     border-color:var(--accent)}
+.check:has(input:checked){border-color:var(--accent-line);background:var(--accent-weak)}
 .seg{display:inline-flex;background:var(--surface-2);border-radius:var(--r-lg);
      padding:var(--s1);gap:var(--s1)}
 .seg button{border:0;background:none;cursor:pointer;padding:var(--s1) var(--s4);
             border-radius:var(--r-md);white-space:nowrap;
-            font-size:13px;color:var(--muted-2);transition:all var(--t)}
+            font-size:13px;color:var(--muted);transition:all var(--t)}
 .seg button:hover{color:var(--fg);background:rgba(17,17,20,.045)}
 .seg button.on,.seg button.on:hover{background:#fff;color:var(--fg);font-weight:560;
                box-shadow:0 1px 2px rgba(17,17,20,.08)}
@@ -190,7 +250,7 @@ select{appearance:none;-webkit-appearance:none;padding-right:var(--s7);cursor:po
 .composer .top{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap}
 .modelpick{display:flex;align-items:center;gap:var(--s2);min-width:0;flex:1}
 .modelpick select{max-width:300px;flex:0 1 300px}
-.price-hint{font-size:12px;color:var(--faint);white-space:nowrap;overflow:hidden;
+.price-hint{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;
             text-overflow:ellipsis}
 .prompt{width:100%;min-height:120px;margin-top:var(--s4);resize:vertical;
         padding:var(--s3);line-height:1.75;font-size:14px}
@@ -203,10 +263,14 @@ select{appearance:none;-webkit-appearance:none;padding-right:var(--s7);cursor:po
 .fold summary>.t{white-space:nowrap}
 .fold summary::-webkit-details-marker{display:none}
 .fold summary:hover{background:var(--surface)}
-.chev{width:7px;height:7px;border-right:1.5px solid var(--faint-deco);
+/* ONE arrow language on the page: › (this .chev, pointing right) opens a
+   disclosure or drills into a row, ⌄ (the same mark rotated down) closes it,
+   → carries a forward action, ↗ leaves for fal.ai. Nothing else. */
+.chev{display:inline-block;width:7px;height:7px;
+      border-right:1.5px solid var(--faint-deco);
       border-bottom:1.5px solid var(--faint-deco);transform:rotate(-45deg);
-      margin-left:2px;transition:transform var(--t)}
-details[open]>summary .chev{transform:rotate(45deg)}
+      margin-left:var(--s1);transition:transform var(--t);flex:none}
+details[open]>summary .chev,.pmore[aria-expanded=true] .chev{transform:rotate(45deg)}
 /* the hint belongs to the title, so it sits next to it — not 1000px away at
    the other end of the row */
 .fold-note{margin-left:var(--s2);font-size:12px;color:var(--muted);min-width:0}
@@ -216,20 +280,28 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .grid3 input{width:100%}
 /* a filled input must not lose its identity: every field keeps a standing label */
 .field{display:flex;flex-direction:column;gap:var(--s1);min-width:0}
-.field>span{font-size:12px;color:var(--muted-2);font-weight:560}
+.field>span{font-size:12px;color:var(--muted);font-weight:560}
 .styledesc{font-size:12px;color:var(--muted);margin-top:var(--s2);min-height:19px}
-.styledesc .slug{color:var(--faint);font-family:ui-monospace,SFMono-Regular,Menlo,
-                 Consolas,monospace}
 /* no full-width gray strip around one dropdown: the parameters are a plain
-   labelled row, and the row header is the label on each control */
+   labelled row. ONE label position on the whole page — above its control, the
+   same as 主体 / 动作 / 场景 — so nothing has to be read sideways. */
 .params{margin-top:var(--s4);display:flex;
-        align-items:center;gap:var(--s4);flex-wrap:wrap;min-height:36px}
-.pgroup{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;font-size:13px;
-        color:var(--muted-2)}
-.pgroup label{font-weight:560}
+        align-items:flex-start;gap:var(--s4);flex-wrap:wrap;min-height:36px}
+.pgroup{display:flex;align-items:flex-start;gap:var(--s4);flex-wrap:wrap;font-size:13px;
+        color:var(--muted)}
+.pgroup .field{gap:var(--s1)}
+.pgroup .field>span{font-size:12px;color:var(--muted);font-weight:560}
 /* background-color, never the shorthand — the shorthand wipes the select arrow */
 .pgroup select,.pgroup input{background-color:#fff}
-.pgroup input[type=number]{width:66px}
+.pgroup input[type=number]{width:76px}
+/* the number and its unit ride together, and the range the model accepts is a
+   STANDING line under the field — not a surprise after a bad value */
+.numrow{display:flex;align-items:center;gap:var(--s2)}
+.numrow>span{color:var(--muted)}
+.fieldhint{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.fieldhint.bad{color:var(--bad);font-weight:560}
+input[aria-invalid=true]{border-color:var(--bad)}
+input[aria-invalid=true]:focus-visible{outline-color:var(--bad)}
 #srcwrap{display:inline-flex;align-items:center;gap:var(--s2)}
 .srcchip{display:inline-flex;align-items:center;gap:var(--s2);background:#fff;
          border:1px solid var(--accent-line);border-radius:var(--r-pill);
@@ -245,14 +317,14 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .srcpick{flex:1 0 100%;display:flex;align-items:flex-start;gap:var(--s3);flex-wrap:wrap;
          margin-top:var(--s3);padding:var(--s3);border:1px solid var(--line);
          border-radius:var(--r-md);background:var(--surface)}
-.srcpick .plabel{font-size:12px;color:var(--muted-2);font-weight:560;padding-top:var(--s2)}
+.srcpick .plabel{font-size:12px;color:var(--muted);font-weight:560;padding-top:var(--s2)}
 .srcrow{display:flex;gap:var(--s2);flex-wrap:wrap;flex:0 1 auto;min-width:0}
 .srcthumb{padding:0;border:1px solid var(--line);border-radius:var(--r-sm);
           overflow:hidden;position:relative;width:62px;
           background:#fff;cursor:pointer;line-height:0;transition:all var(--t)}
 .srcthumb img{width:100%;height:62px;object-fit:cover}
 .srcthumb .cap{display:block;padding:2px var(--s1) var(--s1);font-size:11px;
-               line-height:1.35;color:var(--muted-2);text-align:left;
+               line-height:1.35;color:var(--muted);text-align:left;
                white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srcthumb:hover{border-color:#c9c9d1;box-shadow:var(--sh)}
 .srcthumb.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,70,229,.26)}
@@ -266,17 +338,20 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .composer-foot{display:flex;align-items:center;gap:var(--s4);margin-top:var(--s5);
                padding-top:var(--s4);border-top:1px solid var(--line-2);flex-wrap:wrap}
 .foot-note{flex:1 1 220px;min-width:0;font-size:13px;color:var(--muted)}
-.foot-note.block{color:var(--bad);font-weight:560}
+.foot-note .block{color:var(--bad);font-weight:560}
+.foot-note .ok-note{color:var(--ok);font-weight:560}
 .foot-note .why{display:block;font-size:12px;color:var(--muted);font-weight:400;
                 margin-top:2px}
 .foot-money{display:flex;flex-direction:column;align-items:flex-end;gap:2px;
             margin-left:auto}
-.est{font-size:13px;color:var(--muted-2);white-space:nowrap}
+.est{font-size:13px;color:var(--muted);white-space:nowrap}
 .est b{font-size:15px;color:var(--fg);font-variant-numeric:tabular-nums;
        margin-left:var(--s2)}
 .est.over b{color:var(--bad)}
 .est-note{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;
           white-space:nowrap}
+/* one clip that eats half the remaining budget says so BEFORE the click */
+.est-note.warn{color:var(--warn);font-weight:560}
 
 /* ---------- tiles ---------- */
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));
@@ -288,11 +363,19 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .tiles.few .tile{display:grid;grid-template-columns:200px minmax(0,1fr)}
 .tiles.few .tile-media{aspect-ratio:3/4}
 .tiles.few .tile-media.audio{aspect-ratio:auto}
-.tiles.few .tile-body{padding:var(--s4);display:flex;flex-direction:column;gap:var(--s2)}
+/* the text column is centred against the media column instead of stacking at
+   its top and leaving a 124px hole above the buttons */
+.tiles.few .tile-body{padding:var(--s4);display:flex;flex-direction:column;
+                      justify-content:center;gap:var(--s2)}
 .tiles.few .tile-p{-webkit-line-clamp:8;font-size:13px}
-.tiles.few .tile-acts{margin-top:auto}
+/* the buttons follow the text they belong to. Pinned to the bottom they left a
+   124px hole whenever the image column made the card taller than its words. */
+.tiles.few .tile-acts{margin-top:var(--s3)}
+.tiles.few .tile-media>img,.tiles.few .tile-media .vplayer{
+  border-radius:var(--r-lg) 0 0 var(--r-lg)}
 .tile{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;
-      background:#fff;transition:box-shadow var(--t),border-color var(--t)}
+      background:#fff;box-shadow:var(--sh);
+      transition:box-shadow var(--t),border-color var(--t)}
 .tile:hover{box-shadow:0 6px 20px rgba(17,17,20,.09);border-color:#dedee3}
 .tile-media{position:relative;aspect-ratio:3/4;background:var(--surface-2);
             display:grid;place-items:center;overflow:hidden}
@@ -309,10 +392,12 @@ details[open]>summary .chev{transform:rotate(45deg)}
            color:var(--muted)}
 /* the prompt is the card's content, not a caption: two lines by default and a
    labelled toggle to read the rest — a hover tooltip is no help on touch */
-.tile-p{font-size:12px;color:var(--fg-2);line-height:1.55;margin-top:var(--s2);
+.tile-p{font-size:12px;color:var(--fg-2);line-height:1.55;margin-top:var(--s1);
         display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
         overflow:hidden;overflow-wrap:anywhere}
 .tile-p.full{-webkit-line-clamp:unset;display:block}
+/* a wall of English in a Chinese-first page needs to say what it is */
+.tile-lbl{display:block;font-size:11px;color:var(--muted);margin-top:var(--s2)}
 .pmore{background:none;border:0;padding:0;margin-top:var(--s1);cursor:pointer;
        font-size:12px;color:var(--accent);align-self:flex-start;text-align:left}
 .pmore:hover{text-decoration:underline}
@@ -333,7 +418,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .chip{display:inline-flex;align-items:center;gap:var(--s1);padding:2px var(--s2);
       border-radius:var(--r-pill);
       font-size:12px;line-height:1.6;white-space:nowrap;border:1px solid transparent}
-.chip.run{background:var(--accent-weak);color:#4338ca;border-color:var(--accent-line)}
+.chip.run{background:var(--accent-weak);color:var(--ink);border-color:var(--accent-line)}
 .chip.done{background:var(--ok-bg);color:var(--ok);border-color:#dcf3e2}
 .chip.fail{background:var(--bad-bg);color:var(--bad);border-color:#f6dedb}
 .chip.wait{background:var(--warn-bg);color:var(--warn);border-color:#f7e7c6}
@@ -343,50 +428,78 @@ details[open]>summary .chev{transform:rotate(45deg)}
    gray is the colour of "unavailable" and the cheapest tier is the recommended
    default, not a deprecated one. Availability, lifecycle and modality are text
    elsewhere on the card, never a second badge in this slot. */
+/* ONE indigo ink, four rising grounds: the ramp is now readable as a ramp
+   (每一档都比上一档深), and no single step shouts — the old solid white-on-
+   indigo 旗舰档 was the loudest badge on the page and marked the tier a
+   beginner must NOT pick. */
 .tier{font-size:11px;padding:1px var(--s2);border-radius:var(--r-sm);font-weight:600;
-      background:var(--accent-weak);color:#4338ca;
+      background:var(--accent-weak);color:var(--ink);border:1px solid transparent;
       white-space:nowrap;flex:none;line-height:1.65;cursor:help}
-.tier.r1{background:#f0f1ff;color:#4a44b8}
-.tier.r2{background:#e3e4fd;color:#3f3ab5}
-.tier.r3{background:#c9caf8;color:#2f2b8f}
-.tier.r4{background:#4338ca;color:#fff}
+.tier.r1{background:#f3f3fe;border-color:#e7e7fb}
+.tier.r2{background:#e6e6fc;border-color:#d6d5f8}
+.tier.r3{background:#d3d3f8;border-color:#bfbef2}
+.tier.r4{background:#bfbef4;border-color:#a8a6ee}
+/* 性价比王 is an award, not a step on the 档位 axis — an inline badge with its
+   own outline, sitting in the same row as the badge it must not be confused
+   with (it used to ride the card's corner, over the border) */
+.award{font-size:11px;font-weight:600;color:var(--ink);background:#fff;
+       border:1px solid var(--accent-line);border-radius:var(--r-sm);
+       padding:1px var(--s2);white-space:nowrap;flex:none;line-height:1.65;cursor:help}
 
 /* ---------- table ---------- */
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{text-align:left;font-size:12px;
-        color:var(--muted-2);font-weight:600;padding:var(--s3) var(--s4);
+        color:var(--muted);font-weight:600;padding:var(--s3) var(--s4);
         white-space:nowrap;border-bottom:1px solid var(--line)}
 .tbl td{padding:var(--s3) var(--s4);border-bottom:1px solid var(--line-2);
         vertical-align:middle}
 .tbl tr:last-child td{border-bottom:0}
+/* the row IS the control: it is a real button for the keyboard (role=button,
+   tabindex, Enter/Space) and it shows the › affordance on every width, not
+   only on the phone */
 .tbl tbody tr{cursor:pointer;transition:background var(--t)}
 .tbl tbody tr:hover{background:var(--surface)}
+.tbl tbody tr:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .tbl tbody tr.on{background:var(--accent-weak)}
+.tbl tbody tr.on .rowchev{color:var(--ink);transform:rotate(90deg)}
 .tbl .num{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .tbl th.num{text-align:right}
 .tbl .name{font-weight:560}
-/* on a phone the row is a card, and a card needs to say it opens */
-.rowchev{display:none;color:var(--faint-deco);margin-left:var(--s2);font-size:12px}
-.jobsnote{font-size:13px;color:var(--muted);margin-top:var(--s3)}
+/* the drill-in marker closes the row at the right edge, so the columns are not
+   four labels huddled in the left half of a 1040px card */
+.tbl .c-go{width:1%;text-align:right;padding-left:0}
+.rowchev{display:inline-block;color:var(--faint-deco);font-size:14px;
+         transition:transform var(--t),color var(--t)}
+.rowchev.xs{display:none}
+.jobsnote{font-size:13px;color:var(--muted);line-height:1.7}
 /* the row keeps a compact count; the full stepper lives in the detail only */
 .prog{display:inline-flex;align-items:center;gap:var(--s2);white-space:nowrap;
       cursor:help}
 .prog b{font-weight:600;font-variant-numeric:tabular-nums}
 .prog .s{color:var(--muted)}
+/* 进度 is measured the same way 额度 measures spend: a bar, then the number */
+.minibar{width:48px;height:4px;border-radius:var(--r-pill);background:var(--line);
+         overflow:hidden;flex:none}
+.minibar i{display:block;height:100%;min-width:1px;border-radius:var(--r-pill);
+           background:var(--accent)}
+.minibar.done i{background:var(--ok)}
 
 /* ---------- job detail ---------- */
 .detail{margin-top:var(--s4);padding:var(--s5)}
 .detail-head{display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s3)}
+/* the panel's title is one step under the page title, not a second h1-sized
+   shout 40px below it */
+.detail-head h1{font-size:20px;font-weight:600}
 /* the numbers the row already shows are not repeated beside the title: they
    sit once, here, as the job's facts */
 .facts{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s6);margin-bottom:var(--s5);
-       font-size:13px;color:var(--muted-2)}
+       font-size:13px;color:var(--muted)}
 .facts b{font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums;
          margin-left:var(--s2)}
 /* a flow, not seven chips: the connectors stretch so the chain reads as one
    line, and a finished step is an accent tick — black is the CTA's colour */
 .steps{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-bottom:var(--s5)}
-.step{display:flex;align-items:center;gap:var(--s2);font-size:12px;color:var(--faint)}
+.step{display:flex;align-items:center;gap:var(--s2);font-size:12px;color:var(--muted)}
 .step .dot{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line);
            display:grid;place-items:center;font-size:9px;background:#fff}
 .step.ok{color:var(--fg-2)}
@@ -396,14 +509,18 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .step.cur .dot{border-color:var(--warn);background:var(--warn-bg)}
 .step-bar{flex:1 1 auto;min-width:12px;height:1px;background:var(--line);
           margin:0 var(--s2)}
+/* a connector between two finished steps is part of the finished chain */
+.step-bar.ok{background:#bcb9ef;height:2px}
 .tl{margin:var(--s2) 0 var(--s1)}
 .tl-track{position:relative;height:54px;background:var(--surface);
           border:1px solid var(--line-2);border-radius:var(--r-md);overflow:hidden}
+/* adjacent shots must be told apart at a glance: two fills that actually
+   differ, not .045 beside .10 */
 .tl-seg{position:absolute;top:0;bottom:0;border-right:1px solid var(--line);
         display:flex;align-items:center;justify-content:center;font-size:11px;
-        color:var(--muted);background:rgba(79,70,229,.045);cursor:help}
+        color:var(--muted);background:rgba(79,70,229,.05);cursor:help}
 .tl-seg:focus-visible{outline-offset:-2px}
-.tl-seg:nth-child(even){background:rgba(79,70,229,.10)}
+.tl-seg:nth-child(even){background:rgba(79,70,229,.19)}
 /* red is reserved for failure — the drop marker is amber with a diamond tick */
 .tl-seg.drop{background:rgba(180,83,9,.11)}
 .tl-tick{position:absolute;top:0;bottom:0;width:1px;background:rgba(17,17,20,.09)}
@@ -437,7 +554,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .kf img{width:132px;height:176px;object-fit:cover;display:block;
         border:1px solid var(--line);border-radius:var(--r-md)}
 .kf figcaption{font-size:12px;color:var(--fg-2);margin-top:var(--s2);line-height:1.5}
-.kf figcaption .s{display:block;font-size:11px;color:var(--muted-2)}
+.kf figcaption .s{display:block;font-size:11px;color:var(--muted)}
 
 /* ---------- artifacts (成片 / 配乐) ----------
    The 成片 is the protagonist: it takes the whole column on a neutral stage,
@@ -447,8 +564,13 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .mediarow>div{min-width:0;display:flex;flex-direction:column}
 .mediarow .subhead{margin-top:0}
 .m-note{font-size:12px;color:var(--muted);margin-top:var(--s2);max-width:52ch}
-.player{display:block;width:100%;border-radius:var(--r-lg);
-        border:1px solid var(--line);overflow:hidden;background:#fff}
+/* the stage is the size of the film, not the size of the column: wirePlayer()
+   sets max-width from the real aspect ratio once the metadata lands, so a
+   portrait clip no longer floats in 62% empty grey (and the phone loses its
+   36px gutters for the same reason) */
+.player{display:block;width:100%;margin:0 auto;border-radius:var(--r-lg);
+        border:1px solid var(--line);overflow:hidden;background:#fff;
+        box-shadow:var(--sh)}
 .player video{max-height:min(72vh,640px);max-width:100%;width:auto;height:auto;
               display:block;object-fit:contain;margin:0 auto}
 
@@ -474,10 +596,13 @@ details[open]>summary .chev{transform:rotate(45deg)}
 /* the full player has ONE play control — the labelled one in the bar. The
    centre mark is a decoration that says "this stage plays", not a second
    identical button 300px above the first. */
+/* the same circle the real play button wears: a bare white triangle vanished
+   on a light first frame, and read as a SECOND play button besides */
 .vp-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
          pointer-events:none;color:#fff;opacity:.94;transition:opacity var(--t);
-         filter:drop-shadow(0 2px 10px rgba(0,0,0,.55))}
-.vp-hint svg{transform:scale(2.6)}
+         width:52px;height:52px;border-radius:50%;display:grid;place-items:center;
+         background:rgba(17,17,20,.5);backdrop-filter:blur(3px)}
+.vp-hint svg{transform:scale(2.1)}
 .vplayer.playing .vp-hint{opacity:0}
 .vpbar{display:flex;align-items:center;gap:var(--s3);height:46px;padding:0 var(--s3);
        background:#fff;border-top:1px solid var(--line-2)}
@@ -511,10 +636,16 @@ details[open]>summary .chev{transform:rotate(45deg)}
    is (role=slider + aria-valuenow) instead of being a bare div */
 .ap-track{position:relative;flex:1 1 auto;min-width:36px;height:4px;
           border-radius:var(--r-pill);
-          background:var(--line-2);cursor:pointer;touch-action:none}
+          background:#e2e2e7;cursor:pointer;touch-action:none;
+          transition:height var(--t)}
 .ap-track::after{content:"";position:absolute;inset:-14px 0}
 .ap-track:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
-.ap-track i{display:block;height:100%;width:0;border-radius:var(--r-pill);
+/* a control, not a hairline: the played fill carries colour from 0:00 (3px
+   minimum) and the bar thickens under the pointer */
+.aplayer:hover .ap-track,.vpbar:hover .ap-track,.ap-track:hover,
+.ap-track.drag{height:6px}
+.ap-track i{display:block;height:100%;width:0;min-width:3px;
+            border-radius:var(--r-pill);
             background:var(--accent);position:relative}
 .ap-track i::after{content:"";position:absolute;right:-5px;top:50%;width:10px;
                    height:10px;margin-top:-5px;border-radius:50%;
@@ -545,60 +676,69 @@ details[open]>summary .chev{transform:rotate(45deg)}
              border-radius:var(--r-md);padding:var(--s3);font-size:12px;line-height:1.65;
              overflow:auto;max-height:260px;white-space:pre-wrap;
              overflow-wrap:anywhere;color:var(--fg-2)}
-.subhead{font-size:12px;font-weight:600;color:var(--muted-2);
+/* a section head inside the job detail outranks the caption under it: 14px
+   ink, not another 12px grey line */
+.subhead{font-size:14px;font-weight:600;color:var(--fg);
          margin:var(--s6) 0 var(--s2)}
 
 /* ---------- library ----------
-   Cards size to their own content (align-items:start): expanding one card no
-   longer inflates its row-mates with ~100px of blank, and a short card no
-   longer carries permanent slack to match a tall neighbour. */
+   Every card in a row is the same height (align-items:stretch) AND has no
+   slack inside it (the price line is pinned to the bottom as the card's
+   footer), so a row reads as one band instead of a ragged skyline. Opening a
+   card does NOT grow the card: the detail renders as a full-width panel below
+   the whole row — out of the grid's flow — so row-mates never inflate and no
+   L-shaped hole can appear. */
 .libtools{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;
-          margin-bottom:var(--s5)}
+          margin-bottom:var(--s3)}
 .libtools input[type=text]{flex:1 1 240px;max-width:340px}
 .libtools .count{font-size:13px;color:var(--muted);margin-left:auto}
 .libhint{font-size:13px;color:var(--fg-2);background:var(--accent-weak);
          border:1px solid var(--accent-line);border-radius:var(--r-md);
-         padding:var(--s3) var(--s4);margin-bottom:var(--s5)}
+         padding:var(--s3) var(--s4);margin-bottom:var(--s4)}
+.libnote{font-size:12px;color:var(--muted);margin-bottom:var(--s5)}
 .libgroup{margin-bottom:var(--s7)}
 .libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-         gap:var(--s4);align-items:start}
+         gap:var(--s4);align-items:stretch}
 .mcard{border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;
        padding:var(--s4);transition:all var(--t);position:relative;
-       display:flex;flex-direction:column}
-.mcard:hover{border-color:#dcdce1;box-shadow:var(--sh)}
-.mcard.open{border-color:var(--accent-line);box-shadow:0 4px 16px rgba(79,70,229,.08)}
-/* 性价比王 is an award, not a step on the 档位 axis: it rides the corner */
-.mcard .award{position:absolute;top:-1px;right:-1px;font-size:11px;font-weight:600;
-              color:#3f3ab5;background:var(--accent-weak);
-              border:1px solid var(--accent-line);border-left-width:1px;
-              border-top-right-radius:var(--r-lg);border-bottom-left-radius:var(--r-md);
-              padding:1px var(--s2);cursor:help}
-.mcard.awarded .mcard-hd{padding-right:76px}
+       box-shadow:var(--sh);display:flex;flex-direction:column}
+.mcard:hover{border-color:#dcdce1;box-shadow:0 2px 8px rgba(17,17,20,.08)}
+.mcard.open{border-color:var(--accent-line);box-shadow:0 4px 16px rgba(79,70,229,.10)}
+/* the opened card's detail, spanning the full row width below it */
+.mdetail{grid-column:1/-1;border:1px solid var(--accent-line);
+         border-radius:var(--r-lg);background:var(--accent-weak);
+         padding:var(--s4);display:grid;gap:var(--s2)}
+.mdetail-hd{display:flex;align-items:baseline;gap:var(--s2);flex-wrap:wrap;
+            margin-bottom:var(--s1)}
+.mdetail-name{font-size:14px;font-weight:600}
 /* the whole title row is the expander: one control per card, labelled by the
    model's own name, with a chevron that points the way it actually opens */
 .mcard-hd{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;row-gap:var(--s1);
           width:100%;background:none;border:0;padding:0;cursor:pointer;text-align:left;
           font:inherit;color:inherit}
-.mcard-name{font-size:14px;font-weight:600;letter-spacing:-.005em;min-width:0}
+/* no negative tracking: these names carry 汉字 too (ElevenLabs 配音 TTS) */
+.mcard-name{font-size:14px;font-weight:600;min-width:0}
 /* 「H3 Max（MiniMax·非 Turbo）」 is three qualifiers in one breath: the name is
    the name, the rest is quiet meta beside it */
 .mcard-qual{font-size:12px;color:var(--muted);min-width:0}
 .mcard-hd .chev{margin-left:auto;transform:rotate(45deg);flex:none}
 .mcard.open .mcard-hd .chev{transform:rotate(-135deg)}
-.mcard-price{font-size:12px;color:var(--fg-2);margin-top:var(--s2);
+/* the summary absorbs the row's slack; the price is the pinned footer, so a
+   row of cards has its prices on one line */
+.mcard-sum{flex:1 1 auto}
+.mcard-price{font-size:12px;color:var(--fg-2);margin-top:var(--s3);
+             padding-top:var(--s2);border-top:1px solid var(--line-2);
              font-variant-numeric:tabular-nums}
 .mcard-price .cny{color:var(--muted)}
 /* availability and lifecycle are text, in the price position, where the reader
    is already asking "can I use this and what does it cost" */
 .mcard-price .off{color:var(--muted)}
 .mcard-sum{font-size:13px;color:var(--fg-2);margin-top:var(--s2);line-height:1.6}
-.mcard-more{margin-top:var(--s3);padding-top:var(--s3);border-top:1px solid var(--line-2);
-            display:grid;gap:var(--s2)}
 .mline{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--s1) var(--s3);
-       font-size:12px;line-height:1.7;color:var(--fg-2)}
+       font-size:13px;line-height:1.7;color:var(--fg-2)}
 /* 优点 / 缺点 / 用法 are labels, not statuses: red 缺点 read as an error state.
    The label carries the meaning; the colour carries none. */
-.mline .k{font-size:12px;font-weight:600;color:var(--muted-2);white-space:nowrap}
+.mline .k{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
 .mcard-acts{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;
             margin-top:var(--s2)}
 /* one link style for one destination class: every route to fal.ai is indigo */
@@ -614,23 +754,32 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
        gap:var(--s4)}
 .stat{border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s4);
-      background:#fff}
-/* over the cap, the tile that is over the cap says so in red — the reader must
-   not have to scroll to a bar to learn that spending is blocked */
+      background:#fff;box-shadow:var(--sh)}
+/* over the cap — or out of wallet — the tile that is in trouble says so, in
+   its own colour: the reader must not have to scroll to a bar to learn that
+   spending is blocked, and must not read 「尚未使用」 while 创作 refuses. */
 .stat.bad{border-color:#f0cfcb;background:var(--bad-bg)}
-.stat .k{font-size:12px;color:var(--muted-2);font-weight:600}
-.stat .v{font-size:18px;font-weight:640;margin-top:var(--s2);
-         font-variant-numeric:tabular-nums;letter-spacing:-.015em}
+.stat.warn{border-color:var(--warn-line);background:var(--warn-bg)}
+.stat .k{font-size:12px;color:var(--muted);font-weight:600}
+.stat .v{font-size:22px;font-weight:700;margin-top:var(--s2);
+         font-variant-numeric:tabular-nums}
 .stat.bad .v{color:var(--bad)}
-.stat .n{font-size:12px;color:var(--muted);margin-top:var(--s1)}
+.stat.warn .v{color:var(--warn)}
+.stat .n{font-size:12px;color:var(--muted);margin-top:var(--s1);line-height:1.6}
 .stat.bad .n{color:#8c221c}
+.stat.warn .n{color:#7c4a06}
+.stat .n a,.stat .n .linkbtn{font-size:12px}
 /* the currency lives IN the field, so nothing stands between the input and its
    save button, and the field reads in the same units as the tile above it */
 .capfield{display:flex;align-items:center;gap:var(--s1);background:#fff;
           border:1px solid var(--line);border-radius:var(--r-md);padding:0 var(--s3);
           transition:border-color var(--t),box-shadow var(--t)}
-.capfield:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
-.capfield span{color:var(--muted-2);font-size:13px}
+/* the wrapper is the field, so the ring goes around the wrapper — one ring, in
+   the same place a bare input would have put it */
+.capfield:focus-within{border-color:var(--accent);outline:2px solid var(--accent);
+                       outline-offset:2px}
+.capfield input:focus-visible{outline:none}
+.capfield span{color:var(--muted);font-size:13px}
 .capfield input{border:0;box-shadow:none;padding-left:0;width:88px;
                 font-variant-numeric:tabular-nums}
 .capfield input:focus,.capfield input:hover{border:0;box-shadow:none}
@@ -639,15 +788,18 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .tips li{font-size:13px;color:var(--fg-2);line-height:1.7}
 .bigbar{height:6px;border-radius:var(--r-pill);background:var(--line-2);overflow:hidden;
         margin-top:var(--s3)}
-.bigbar i{display:block;height:100%;border-radius:var(--r-pill);
+.bigbar i{display:block;height:100%;min-width:1px;border-radius:var(--r-pill);
           background:var(--accent);transition:width 300ms ease}
 .bigbar.warn i{background:#d97706}.bigbar.bad i{background:var(--bad)}
 /* everything in 额度 measures to the card, not to a 520px ghost column: the
    bar spans its card and the price rows flow into as many columns as fit */
 .pricegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));
            gap:0 var(--s7)}
+/* the rule goes ABOVE each row: a bottom border drew a stray divider under the
+   last row of the table, and in a two-column grid there is no way to know
+   which cells are last */
 .prow{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s4);
-      font-size:13px;padding:var(--s2) 0;border-bottom:1px solid var(--line-2)}
+      font-size:13px;padding:var(--s2) 0;border-top:1px solid var(--line-2)}
 .prow .k{color:var(--muted)}
 .prow .v{font-variant-numeric:tabular-nums;white-space:nowrap}
 
@@ -678,6 +830,14 @@ details[open]>summary .chev{transform:rotate(45deg)}
 .guide .kv b{color:var(--fg)}
 /* a UI term is a name: it must never break across two lines */
 .guide b{white-space:nowrap}
+/* a command is monospace everywhere it appears — page, drawer, empty state */
+.guide .mono,.jobsnote .mono,.empty .mono{font-size:12px;background:var(--surface-2);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);padding:1px var(--s1);
+  white-space:nowrap}
+/* the 「?」 the sentence points at is drawn as the button it points at */
+.keycap{display:inline-grid;place-items:center;width:20px;height:20px;
+        border-radius:var(--r-pill);border:1px solid var(--line);background:#fff;
+        font-size:12px;color:var(--muted);vertical-align:middle;margin:0 2px 2px}
 /* a real definition list, not U+3000 pretending to be one */
 .guide dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--s2) var(--s4);
           margin:0}
@@ -711,7 +871,6 @@ details[open]>summary .chev{transform:rotate(45deg)}
             border:5px solid transparent}
 #tip.below::after{bottom:100%;border-bottom-color:#1c1c22}
 #tip.above::after{top:100%;border-top-color:#1c1c22}
-#tip.side::after{display:none}
 
 /* between the phone and the desktop the table used to keep nine 66px columns:
    the two descriptive ones go first, the money and the progress stay */
@@ -719,22 +878,27 @@ details[open]>summary .chev{transform:rotate(45deg)}
   .tbl th.c-flow,.tbl td.c-flow,.tbl th.c-style,.tbl td.c-style{display:none}
   .libgrid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 }
-/* touch widths: nothing interactive may be smaller than a fingertip (44px) */
-@media (max-width:760px){
+/* touch widths: nothing interactive may be smaller than a fingertip (44px).
+   The breakpoint is 900, not 760, because 768px (iPad portrait) is a TOUCH
+   screen and used to get the desktop layout with 29px controls. */
+@media (max-width:900px){
   .nav-in{gap:var(--s3);padding:var(--s2) var(--s4)}
   .wrap{padding:var(--s6) var(--s4) 72px}
   .grid3{grid-template-columns:1fr}
   .params{gap:var(--s3)}
+  /* a truncated price is not a price: on a tablet the hint wraps instead */
+  .price-hint{white-space:normal;overflow:visible;text-overflow:clip;
+              line-height:1.5}
   .btn,.tab,.seg button,.balchip{min-height:44px}
   .btn{padding:var(--s2) var(--s4)}
   .btn.tiny{min-height:44px;padding:var(--s2) var(--s3);font-size:13px}
   .iconbtn{width:44px;height:44px}
-  .banner .x{width:44px;height:44px}
+  .banner .x,.promo .x{width:44px;height:44px}
   .pmore{min-height:44px}
   select,input[type=text],input[type=number],textarea{min-height:44px}
   .capfield{min-height:44px}.capfield input{min-height:40px}
   .mcard-hd{min-height:44px}
-  .check{min-height:44px}.check input{width:20px;height:20px}
+  .check{min-height:44px}.check input{width:22px;height:22px}
   .skip{min-height:44px;display:flex;align-items:center}
   .aplayer,.vpbar{height:56px}
   .aplayer.mini{height:48px}
@@ -751,6 +915,11 @@ details[open]>summary .chev{transform:rotate(45deg)}
   .foot-money{flex:1 1 100%;margin-left:0;flex-direction:row;align-items:baseline;
               justify-content:space-between;gap:var(--s3)}
   .composer-foot .btn.primary{flex:1 1 100%;justify-content:center}
+}
+@media (max-width:900px){
+  /* the page title keeps its rank without eating a phone's first screen */
+  h1{font-size:22px}
+  .detail-head h1{font-size:18px}
 }
 @media (max-width:520px){
   /* the tabs get their own scrollable row: CJK labels stay on one line and
@@ -790,7 +959,10 @@ details[open]>summary .chev{transform:rotate(45deg)}
      into one meta line inside the card */
   .jobstbl td.c-budget,.jobstbl td.c-est{order:5;font-size:12px;color:var(--muted)}
   .jobstbl td.c-est{justify-self:end}
-  .rowchev{display:inline-block}
+  /* the card's drill-in marker rides with the name; the desktop column that
+     carries it has no place in a two-column card */
+  .jobstbl td.c-go{display:none}
+  .rowchev.xs{display:inline-block;margin-left:var(--s1)}
   /* the connectors have nothing to connect once the chain wraps — a stranded
      22px bar at a line start read as a rendering bug */
   .steps{gap:var(--s2) var(--s3)}
@@ -800,9 +972,34 @@ details[open]>summary .chev{transform:rotate(45deg)}
   .stats>.stat:last-child{grid-column:1/-1}
   .drawer-head{padding:var(--s2) var(--s3)}
   .hide-xs{display:none}
+  /* an unlabeled 52px bar in the corner of a phone is not information: the
+     chip keeps the balance, the meter lives on 额度 */
+  .balchip .sep,.balchip .meter{display:none}
   .cardlbl{display:inline}
   .kf,.kf img{width:104px}
   .kf img{height:139px}
+  /* half the ticks at half the width — the full set was a grey smear */
+  .tl-tick.thin{display:none}
+}
+@media (max-width:430px){
+  /* 390px: one column, so 「批量任务」 never breaks after 批量任 and no card
+     is stranded at half width */
+  .stats{grid-template-columns:minmax(0,1fr)}
+  /* the estimate and the arithmetic under it keep their two lines */
+  .foot-money{flex-direction:column;align-items:flex-start;gap:2px}
+  .est-note{white-space:normal}
+  /* The scrubber is the primary control, and on a 390px bar three 44px icons
+     plus a timecode left it 41px wide. The timecode yields and the scrubber
+     takes a full row of its own, under the buttons. */
+  .vpbar .ap-time,.aplayer:not(.mini) .ap-time{display:none}
+  .vpbar,.aplayer:not(.mini){flex-wrap:wrap;height:auto;padding:var(--s2);
+                             gap:var(--s2) var(--s1)}
+  .vpbar .ap-track,.aplayer:not(.mini) .ap-track{flex:1 1 100%;order:9;
+                                                 min-width:0;height:6px}
+  .vpbar .ap-track::after,.aplayer:not(.mini) .ap-track::after{inset:-10px 0}
+  .vpbar .mp-acts,.aplayer:not(.mini) .mp-acts{margin-left:auto}
+  .tiles.few .tile-media>img,.tiles.few .tile-media .vplayer{
+    border-radius:var(--r-lg) var(--r-lg) 0 0}
 }
 /* labels that exist only in the phone's card layout */
 .cardlbl{display:none}
@@ -827,7 +1024,8 @@ details[open]>summary .chev{transform:rotate(45deg)}
     </div>
     <div class="nav-right">
       <button class="balchip" data-view="quota" id="balchip" aria-label="查看额度明细">
-        <span class="k">余额</span><span class="v" id="bal">–</span>
+        <span class="k">余额</span><span class="v" id="bal">—</span>
+        <span class="stalemsg" id="balstale" hidden>连接中断</span>
         <span class="sep"></span>
         <span class="k hide-xs">已花</span>
         <span class="meter" id="meter"><i id="meterfill"></i></span>
@@ -839,10 +1037,11 @@ details[open]>summary .chev{transform:rotate(45deg)}
 </header>
 
 <div class="banner" id="banner" hidden>
+  <!-- this strip carries only states that BLOCK generation: never dismissible,
+       always with the way out, and never a duplicate of the promo -->
   <div class="banner-in">
     <span id="bannertext"></span>
     <button class="act" id="banneract" hidden></button>
-    <button class="x" id="bannerx" aria-label="关闭提示" data-tip="关闭提示">×</button>
   </div>
 </div>
 
@@ -855,7 +1054,14 @@ details[open]>summary .chev{transform:rotate(45deg)}
       <p class="sub">写一句提示词，先花几分钱试；满意了再放大成视频。</p>
     </div>
 
-    <div class="card composer elev">
+    <!-- the discount notice lives here, not in the page-level banner strip:
+         switching tabs used to move the whole page by 72px -->
+    <div class="promo" id="promo" hidden>
+      <span id="promotext"></span>
+      <button class="x" id="promox" aria-label="关闭折扣提示" data-tip="关闭折扣提示">×</button>
+    </div>
+
+    <div class="card composer">
       <div class="top">
         <div class="seg" id="kindseg" role="radiogroup" aria-label="生成类型">
           <button data-kind="image" class="on" role="radio" aria-checked="true">图片</button>
@@ -866,7 +1072,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
         </div>
         <div class="modelpick">
           <select id="model" aria-label="模型"></select>
-          <span class="price-hint" id="modelprice"></span>
+          <span class="price-hint" id="modelprice" tabindex="0"></span>
         </div>
       </div>
 
@@ -875,7 +1081,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
 
       <details class="fold" id="tmplfold">
         <summary><span class="chev"></span><span class="t">套用风格模板</span><span
-          class="fold-note">不会写提示词？填三个空自动拼（模型更听英文，所以拼出来以英文为主）</span></summary>
+          class="fold-note">不会写提示词？填三个空，点按钮拼成提示词（模型更听英文，拼出来以英文为主）</span></summary>
         <div class="fold-body">
           <div class="grid3">
             <label class="field"><span>主体</span>
@@ -897,29 +1103,37 @@ details[open]>summary .chev{transform:rotate(45deg)}
 
       <div class="params" id="params">
         <div class="pgroup" data-kind="image">
-          <label for="isize">尺寸</label>
-          <select id="isize">
-            <option value="720x1280">720×1280 竖屏草稿</option>
-            <option value="1080x1920">1080×1920 竖屏</option>
-            <option value="1280x720">1280×720 横屏</option>
-            <option value="1080x1080">1080×1080 方形</option>
-          </select>
+          <label class="field"><span>尺寸</span>
+            <select id="isize">
+              <option value="720x1280">720×1280 竖屏草稿</option>
+              <option value="1080x1920">1080×1920 竖屏</option>
+              <option value="1280x720">1280×720 横屏</option>
+              <option value="1080x1080">1080×1080 方形</option>
+            </select></label>
         </div>
         <div class="pgroup" data-kind="video" hidden>
-          <label for="vdur">时长</label>
-          <input type="number" id="vdur" min="4" max="15" step="1" value="5"><span>秒</span>
-          <label for="vres" style="margin-left:6px">分辨率</label>
-          <select id="vres">
-            <option>480P</option><option selected>768P</option><option>1080P</option>
-          </select>
-          <span id="srcwrap"></span>
+          <!-- the accepted range is a STANDING line under the field, so it is
+               read before a bad number is typed, not after -->
+          <div class="field"><span><label for="vdur">时长</label></span>
+            <span class="numrow">
+              <input type="number" id="vdur" min="4" max="15" step="1" value="5"
+                     aria-describedby="vdurhint"><span>秒</span></span>
+            <span class="fieldhint" id="vdurhint">4–15 秒的整数</span></div>
+          <label class="field"><span>分辨率</span>
+            <select id="vres">
+              <option>480P</option><option selected>768P</option><option>1080P</option>
+            </select></label>
+          <div class="field" id="srcfield"><span>参考图</span>
+            <span id="srcwrap"></span></div>
         </div>
         <div class="pgroup" data-kind="music" hidden style="flex:1">
-          <label for="mdur">时长</label>
-          <input type="number" id="mdur" min="10" max="120" step="1" value="30"><span>秒</span>
-          <input type="text" id="lyrics" placeholder="歌词（留空为纯音乐）"
-                 aria-label="歌词"
-                 style="flex:1;min-width:180px;margin-left:6px">
+          <div class="field"><span><label for="mdur">时长</label></span>
+            <span class="numrow">
+              <input type="number" id="mdur" min="10" max="120" step="1" value="30"
+                     aria-describedby="mdurhint"><span>秒</span></span>
+            <span class="fieldhint" id="mdurhint">10–120 秒的整数</span></div>
+          <label class="field" style="flex:1;min-width:180px"><span>歌词</span>
+            <input type="text" id="lyrics" placeholder="留空就是纯音乐"></label>
         </div>
         <div class="srcpick" id="srcstrip" hidden></div>
       </div>
@@ -929,12 +1143,13 @@ details[open]>summary .chev{transform:rotate(45deg)}
         <span class="foot-money">
           <span class="est" id="estwrap">预计花费<b id="est">$0.00</b></span>
           <span class="est-note" id="estnote"></span>
+          <span class="est-note warn" id="estwarn" hidden></span>
         </span>
         <button class="btn primary" id="genbtn">生成</button>
       </div>
     </div>
 
-    <div class="sec-head"><span class="lbl">最近生成</span>
+    <div class="sec-head"><h2 class="sec-title">最近生成</h2>
       <span class="small" id="rescount"></span></div>
     <div id="results"></div>
   </section>
@@ -943,10 +1158,13 @@ details[open]>summary .chev{transform:rotate(45deg)}
   <section class="view" id="view-jobs" hidden role="tabpanel" aria-labelledby="tab-jobs">
     <div class="view-head">
       <h1>任务</h1>
-      <p class="sub">reelforge run 跑的批量任务，点一行看详情。</p>
+      <p class="sub">Claude Code 跑的批量任务，点一行看详情。</p>
     </div>
     <div id="jobswrap"></div>
     <div id="jobdetail"></div>
+    <!-- the "what now" card sits under the detail, not between the row and the
+         detail it opens -->
+    <div id="jobshelp"></div>
   </section>
 
   <!-- ============ 模型库 ============ -->
@@ -956,15 +1174,16 @@ details[open]>summary .chev{transform:rotate(45deg)}
       <h1>模型库</h1>
       <p class="sub">按用途分组，点卡片看优缺点与用法。</p>
     </div>
-    <div class="libhint">不知道选哪个？图片先用 <b>Z-Image Turbo</b>
-      起草、挑中后用 <b>Seedream 5 Lite</b> 出正式版；视频用 <b>H3 Max Turbo</b>，
-      先 480P 试一版再 768P 出片。</div>
+    <!-- Chinese prose is never wrapped in the source: a newline inside a
+         sentence collapses to a space and prints as 「H3 Max Turbo，␣先 480P」 -->
+    <div class="libhint">不知道选哪个？图片先用 <b>Z-Image Turbo</b> 起草、挑中后用 <b>Seedream 5 Lite</b> 出正式版；视频用 <b>H3 Max Turbo</b>，先 480P 试一版再 768P 出片。</div>
     <div class="libtools">
       <input type="text" id="libq" placeholder="搜模型名、用途、优缺点" aria-label="搜索模型">
       <label class="check"><input type="checkbox" id="libsel">
         <span>只看能一键生成的</span></label>
       <span class="count" id="libcount" role="status"></span>
     </div>
+    <p class="libnote">价格都以美元计价；写成 ¥ 的是按 ≈¥7.2/$ 折算的参考价。</p>
     <div id="library"></div>
   </section>
 
@@ -973,11 +1192,11 @@ details[open]>summary .chev{transform:rotate(45deg)}
            aria-labelledby="tab-quota">
     <div class="view-head">
       <h1>额度</h1>
-      <p class="sub">所有消费（含批量任务）都受总上限保护，超了直接拒绝。</p>
+      <p class="sub">试玩台和批量任务共用同一个总上限。</p>
     </div>
     <div class="stats" id="quotastats"></div>
     <div class="card pad" style="margin-top:16px">
-      <div class="lbl">总额度上限</div>
+      <h2 class="sec-title">总额度上限</h2>
       <p class="small" id="capexplain" style="margin-top:4px"></p>
       <div class="row" style="margin-top:12px">
         <label class="capfield"><span>$</span>
@@ -992,18 +1211,19 @@ details[open]>summary .chev{transform:rotate(45deg)}
       <p class="small" id="capline" style="margin-top:8px"></p>
     </div>
     <div class="card pad" style="margin-top:16px">
-      <div class="lbl">价格表</div>
-      <p class="small" style="margin-top:4px">下面是内置流水线用到的单价；
-        全部 18 个模型的价格在<button class="linkbtn" data-view="library">模型库</button>。</p>
+      <h2 class="sec-title">价格表</h2>
+      <p class="small" style="margin-top:4px">内置流水线用到的单价（美元）。</p>
       <div class="pricegrid" id="prices" style="margin-top:8px"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" data-view="library">看全部 18 个模型的价格 →</button>
+      </div>
     </div>
     <div class="card pad" style="margin-top:16px">
-      <div class="lbl">怎么少花钱</div>
-      <ul class="tips">
+      <h2 class="sec-title">怎么少花钱</h2>
+      <ul class="tips" style="margin-top:12px">
         <li>先用<b>草稿档图片</b>把想法试出来：一张几分钱，十张也不到一毛。</li>
         <li>视频先出 <b>480P / 4–5 秒</b>，满意再用同一段提示词换 768P 出正式版。</li>
-        <li>批量任务在 <code class="mono">jobs/*.yaml</code> 里写 <b>budget_usd</b>，
-          单个任务超预算会停下来问你。</li>
+        <li>批量任务可以单独设一个预算，跑超了会停下来问你——让 Claude Code 在任务里写上就行。</li>
       </ul>
     </div>
   </section>
@@ -1030,11 +1250,11 @@ details[open]>summary .chev{transform:rotate(45deg)}
     <ol>
       <li>在<b>创作</b>里选图片，写一句提示词——不会写就展开<b>套用风格模板</b>，填主体、动作、场景，自动拼成提示词（以英文为主，模型更听英文）。一张草稿几分钱，多生几张挑。</li>
       <li>图满意了就让它动起来：在图片卡片上点<b>用这张生视频</b>，或切到<b>视频</b>后在参数栏点<b>参考图</b>挑一张。先用 480P + 4–5 秒试一版，大约两毛多，满意再换 768P 出正式版。</li>
-      <li>想要带配乐、卡点剪辑的成片：让 Claude Code 跑 <b>reelforge run</b>，回<b>任务</b>看进度、选关键帧、看成片。</li>
+      <li>想要带配乐、卡点剪辑的成片：让 Claude Code 跑 <code class="mono">reelforge run</code>，回<b>任务</b>看进度、选关键帧、看成片。</li>
     </ol>
       </div>
     </details>
-    <details class="gsec">
+    <details class="gsec" open>
       <summary>花钱规则<span class="chev"></span></summary>
       <div class="gsec-body">
     <div class="kv">生成前页面一定先显示<b>预计花费</b>；所有消费都走同一个总额度上限，超了会被直接拒绝，不会偷偷扣钱。</div>
@@ -1066,7 +1286,7 @@ details[open]>summary .chev{transform:rotate(45deg)}
   </div>
   <div class="drawer-foot">
     <button class="btn primary" id="drawergo">开始创作</button>
-    <span class="small">随时点右上角的 ? 回到这里。</span>
+    <span class="small">随时点右上角的 <span class="keycap" aria-hidden="true">?</span> 回到这里。</span>
   </div>
 </aside>
 
@@ -1082,11 +1302,12 @@ var logOpen = false;
 var sourceImage = null;
 var srcOpen = false;          // 参考图 picker strip open in the 视频 params
 var submitting = false;
-var expanded = {};            // model id -> open in library
 var picks = {};               // shot index -> candidate index
 var sig = {};                 // cached render signatures (anti-flicker)
 var netDown = false;
 var booted = false;           // first /api/summary answered (ok or not)
+var composeOk = false;        // 套用模板 just wrote the prompt (see compose())
+var openModel = null;         // library: the one expanded card, if any
 
 var $ = function (id) { return document.getElementById(id); };
 var esc = function (s) {
@@ -1108,13 +1329,14 @@ var money = function (v) {
   if (n < 0.001) return sign + "<$0.001";
   return sign + "$" + (n < 0.01 ? n.toFixed(3) : n.toFixed(2));
 };
-/* unit prices: exact, but always ≥3 decimals so the column reads as one scale
-   ($0.005 / $0.035 / $0.00625, never $0.02 beside $0.00625) */
+/* unit prices: ALWAYS three decimals, so a price column is one scale and never
+   $0.010 beside $0.00625 beside $0.0214. Below a tenth of a cent the floor
+   marker takes over, the same marker money() uses. */
 var rate = function (v) {
   var n = +v;
   if (v == null || !isFinite(n)) return "—";
-  var s = n.toFixed(5).replace(/(\.\d{3}\d*?)0+$/, "$1");
-  return "$" + s;
+  if (n > 0 && n < 0.0005) return "<$0.001";
+  return "$" + n.toFixed(3);
 };
 var intCount = function (v) { return String(Math.round(+v || 0)); };
 /* The catalog writes prices the way a human wrote them; the page prints them
@@ -1123,9 +1345,13 @@ var intCount = function (v) { return String(Math.round(+v || 0)); };
    of parentheses in some rows and commas in others. */
 function normPrice(text) {
   var s = String(text == null ? "" : text);
-  s = s.replace(/720p/g, "720P");
+  /* every resolution is written 480P / 720P / 1080P — never a lowercase p in
+     one card and an uppercase P in the next */
+  s = s.replace(/(\d{3,4})\s*p\b/gi, "$1P");
   s = s.replace(/\$[\d.]+\s*\/\s*分钟\s*（\s*(\$[\d.]+)\s*\/\s*秒\s*）/g, "$1/秒");
   s = s.replace(/\$(\d+(?:\.\d+)?)\s*(?=\/)/g, function (_, n) { return rate(+n); });
+  /* ¥ is a converted reference price: two decimals like every other amount */
+  s = s.replace(/¥\s*(\d+(?:\.\d+)?)/g, function (_, n) { return "¥" + (+n).toFixed(2); });
   s = s.replace(/（\s*约\s*(¥[\d.]+)\s*）/g, "，约 $1");
   s = s.replace(/（([^（）]*¥[^（）]*)）/g, "，$1");
   return s.replace(/[ \t]+/g, " ").trim();
@@ -1152,25 +1378,24 @@ function showTip(el) {
   tipEl.className = "";
   var r = el.getBoundingClientRect();
   var tw = tipEl.offsetWidth, th = tipEl.offsetHeight;
-  /* a badge sits between the group header above it and its own price below, so
-     its tip goes BESIDE it and covers neither */
-  if (el.hasAttribute("data-tip-side")) {
-    var sx = r.right + 8;
-    if (sx + tw + 8 > window.innerWidth) sx = r.left - tw - 8;
-    if (sx >= 8) {
-      var sy = Math.max(8, Math.min(window.innerHeight - th - 8,
-        Math.round(r.top + r.height / 2 - th / 2)));
-      tipEl.style.top = sy + "px";
-      tipEl.style.left = Math.round(sx) + "px";
-      tipEl.className = "side on";
-      el.setAttribute("aria-describedby", "tip");
-      return;
-    }
-  }
+  /* A carrier inside a [data-tipbox] (a library card) may never let its tip
+     spill over a NEIGHBOUR: it used to open beside the badge and cover the
+     next card's title 「FLUX 2」 → 「X 2」. The tip opens below the badge and is
+     clamped to the card's own box, so the only thing it can ever cover is the
+     card it belongs to. */
+  var box = el.closest ? el.closest("[data-tipbox]") : null;
   var below = r.top < th + 12;
+  var lo = 8, hi = window.innerWidth - tw - 8;
+  if (box) {
+    var b = box.getBoundingClientRect();
+    below = true;
+    lo = Math.max(lo, Math.round(b.left));
+    hi = Math.min(hi, Math.round(b.right - tw));
+    if (hi < lo) hi = lo;
+  }
   var top = below ? r.bottom + 8 : r.top - th - 8;
   var left = Math.round(r.left + r.width / 2 - tw / 2);
-  left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+  left = Math.max(lo, Math.min(left, hi));
   tipEl.style.top = Math.round(top) + "px";
   tipEl.style.left = left + "px";
   tipEl.style.setProperty("--tipx",
@@ -1282,8 +1507,9 @@ function audioPlayer(src, mini) {
 /* tile = the cramped variant: overlay button + a 3px progress line, no row.
    The full player has exactly ONE play control — the labelled one in its bar;
    the mark in the middle of the stage is decoration, not a second button. */
-function videoPlayer(src, tile) {
-  var v = '<video src="' + esc(src) + '" preload="metadata" playsinline></video>';
+function videoPlayer(src, tile, poster) {
+  var v = '<video src="' + esc(src) + '" preload="metadata" playsinline' +
+    (poster ? ' poster="' + esc(poster) + '"' : "") + "></video>";
   if (tile)
     return '<div class="vplayer tilevp loading">' + v +
       '<button class="ap-btn vp-play" type="button" aria-label="播放">' +
@@ -1299,6 +1525,21 @@ function videoPlayer(src, tile) {
     mediaBtn("mp-full", FULL_SVG, "全屏") +
     dlBtn(src, "下载视频") + "</span></div></div>";
 }
+/* the stage takes the film's shape: a 9:16 clip in a 948px column used to sit
+   in 62% empty grey, and in 36px grey gutters on a phone. The stage is sized
+   from the real aspect ratio once the metadata lands — one listener for the
+   whole page, so a repaint can never leave handlers on detached nodes. */
+function fitStages() {
+  var list = document.querySelectorAll(".player video");
+  var maxH = window.innerWidth <= 520 ? Math.min(window.innerHeight * .62, 460)
+    : Math.min(window.innerHeight * .72, 640);
+  for (var i = 0; i < list.length; i++) {
+    var v = list[i], host = v.closest(".player");
+    if (!host || !v.videoWidth || !v.videoHeight) continue;
+    host.style.maxWidth = Math.ceil(v.videoWidth / v.videoHeight * maxH) + "px";
+  }
+}
+window.addEventListener("resize", fitStages);
 function initPlayers() {
   var list = document.querySelectorAll(
     ".aplayer:not([data-ready]),.vplayer:not([data-ready])");
@@ -1373,7 +1614,7 @@ function wirePlayer(el) {
     el.classList.remove("playing"); icon(PLAY_SVG, "播放");
   });
   a.addEventListener("timeupdate", draw);
-  a.addEventListener("loadedmetadata", draw);
+  a.addEventListener("loadedmetadata", function () { draw(); fitStages(); });
   a.addEventListener("ended", function () { a.currentTime = 0; draw(); });
   /* the black slab is gone: the stage shimmers until there is a frame to show */
   var ready = function () { el.classList.remove("loading"); draw(); };
@@ -1465,11 +1706,12 @@ async function api(path, body) {
 /* ---------------- navigation ----------------
    A tablist is one tab stop with arrow keys inside it, not four separate stops
    (same for the 图片/视频/音乐 radiogroup). */
-function setView(v) {
+var VIEWS = ["create", "jobs", "library", "quota"];
+var VIEW_TITLE = { create: "创作", jobs: "任务", library: "模型库", quota: "额度" };
+function setView(v, fromHash) {
+  if (VIEWS.indexOf(v) < 0) v = "create";
   view = v;
-  ["create", "jobs", "library", "quota"].forEach(function (n) {
-    $("view-" + n).hidden = n !== v;
-  });
+  VIEWS.forEach(function (n) { $("view-" + n).hidden = n !== v; });
   var tabs = document.querySelectorAll("#tabs .tab");
   for (var i = 0; i < tabs.length; i++) {
     var on = tabs[i].dataset.view === v;
@@ -1477,7 +1719,12 @@ function setView(v) {
     tabs[i].setAttribute("aria-selected", on ? "true" : "false");
     tabs[i].tabIndex = on ? 0 : -1;
   }
+  /* the tab is in the URL: deep links work, the back button works, and the
+     window title says which page is open */
+  document.title = VIEW_TITLE[v] + " · reelforge 工作台";
+  if (!fromHash && location.hash.slice(1) !== v) location.hash = v;
   if (v === "jobs" && openJob) renderJobDetail();
+  if (v === "library") layoutLib();
   if (S) renderBanner();
   window.scrollTo({ top: 0 });
 }
@@ -1555,9 +1802,16 @@ function syncModels() {
     if (list.some(function (m) { return m.id === keep; })) sel.value = keep;
     else if (list.length) sel.value = list[0].id;
   }
+  /* a control that cannot answer is not left focusable with one dead option:
+     when the service is unreachable the picker says so and stops taking input */
+  var dead = !list.length || netDown;
+  sel.disabled = dead;
+  sel.setAttribute("data-tip", dead
+    ? "连不上本地 dash 服务，读不到模型列表。服务恢复后会自动填上。"
+    : "选一个模型，价格在右边");
   var m = currentModel(), hint = priceHint(m);
-  $("modelprice").innerHTML = hint.html;
-  $("modelprice").setAttribute("data-tip", hint.title);
+  $("modelprice").innerHTML = dead ? '<span class="dim">—</span>' : hint.html;
+  $("modelprice").setAttribute("data-tip", dead ? "读不到价格" : hint.title);
 }
 var PLACEHOLDER = {
   image: "描述你要的画面：主体 + 光从哪来 + 什么颜色撞什么颜色 + 什么镜头。" +
@@ -1611,11 +1865,12 @@ function renderSource() {
     imgs.map(function (t) { return t.id; }).join(",")].join("|");
   if (sig.src === s) return;
   sig.src = s;
+  $("srcfield").hidden = !accepts;   // no orphan label when the model refuses one
   /* the button says which state it is in, not just what it is about */
   var btn = accepts
     ? '<button class="btn tiny" data-act="srcpick" aria-expanded="' +
       (srcOpen ? "true" : "false") + '">' +
-      (srcOpen ? "收起参考图" : sourceImage ? "换一张参考图" : "参考图…") +
+      (srcOpen ? "收起" : sourceImage ? "换一张" : "选一张…") +
       "</button>"
     : "";
   w.innerHTML = (sourceImage && accepts
@@ -1637,11 +1892,11 @@ function renderSource() {
           '"><img src="/files/' + esc(t.file) + '" alt="" loading="lazy">' +
           '<span class="tick">✓</span>' +
           '<span class="cap">' + esc(whenText(t.ts) || name) + "</span></button>";
-      }).join("") + "</div>" +
-        '<button class="btn tiny" data-act="srcclose">收起</button>'
+      }).join("") + "</div>"
       : '<span class="small" style="flex:1 1 auto">' +
-        "还没有已完成的图片，先切到「图片」生成一张，几分钱一张。</span>" +
-        '<button class="btn tiny" data-act="srcclose">收起</button>');
+        "还没有已完成的图片，先切到「图片」生成一张，几分钱一张。</span>");
+  /* no second 收起 down here: the labelled 参考图 button 12px above is the one
+     control that opens and closes this strip */
 }
 function pickSource(file) {
   sourceImage = file;
@@ -1672,11 +1927,11 @@ function genRequest() {
     var wh = $("isize").value.split("x");
     req.width = +wh[0]; req.height = +wh[1];
   } else if (kind === "video") {
-    req.duration = Math.round(+$("vdur").value) || 5;   // seconds are whole numbers
+    req.duration = durValue() || 5;   // seconds are whole numbers
     req.resolution = $("vres").value;
     if (sourceImage) req.source_image = sourceImage;
   } else {
-    req.duration = Math.round(+$("mdur").value) || 30;
+    req.duration = durValue() || 30;
     req.lyrics = $("lyrics").value;
   }
   return req;
@@ -1690,12 +1945,15 @@ function localEst() {        // instant placeholder from /api/summary.prices
     var wh = $("isize").value.split("x");
     return P.image_fast_per_mp * (+wh[0]) * (+wh[1]) / 1e6;
   }
-  if (kind === "video")
-    return (P.video_per_s[$("vres").value] || 0) * (Math.round(+$("vdur").value) || 5);
-  return P.music_per_s * (Math.round(+$("mdur").value) || 30);
+  var d = durState();
+  if (!d.ok) return null;            // an out-of-range field has no price
+  if (kind === "video") return (P.video_per_s[$("vres").value] || 0) * d.n;
+  return P.music_per_s * d.n;
 }
 /* the estimate is never a bare number: it shows the arithmetic it came from,
    derived from the estimate itself so the two can never disagree */
+/* the arithmetic behind the number, in words a beginner owns: no 「百万像素」,
+   no formula symbols — just the size and the seconds being paid for */
 function estFormula(v) {
   var m = currentModel();
   if (!(+v > 0)) return "";
@@ -1704,19 +1962,46 @@ function estFormula(v) {
     if (!d) return "";
     return rate(v / d) + "/秒 × " + intCount(d) + " 秒";
   }
-  var wh = $("isize").value.split("x"), mp = (+wh[0]) * (+wh[1]) / 1e6;
-  if (m && (m.family === "wh") && mp > 0)
-    return rate(v / mp) + "/百万像素 × " + mp.toFixed(2) + " 百万像素";
-  return money(v) + "/张（按张计费，画布会放大到模型的最小尺寸）";
+  var wh = $("isize").value.split("x");
+  if (m && m.family === "wh")
+    return "这个尺寸（" + intCount(wh[0]) + "×" + intCount(wh[1]) + "）一张的价钱";
+  return "按张计费，" + money(v) + " 一张";
 }
-function durValue() {
-  if (kind === "video") return Math.round(+$("vdur").value) || 0;
-  if (kind === "music") return Math.round(+$("mdur").value) || 0;
-  return 0;
-}
-function durRange() {
+/* ---------------- the duration field ----------------
+   ONE reading of the field for the whole page: the estimator, the gate, the
+   hint line under the input and the request body all ask this. A value the
+   model cannot take is therefore never priced (no 「-$0.05」, no stale number
+   left over from the last good value), never submitted, and never silently
+   rounded into range (3.7 used to become 4 and enable the button). */
+function durState() {
+  if (kind === "image") return { ok: true, n: 0 };
   var el = kind === "video" ? $("vdur") : $("mdur");
-  return { min: +el.min || 0, max: +el.max || 0, el: el };
+  var min = +el.min || 0, max = +el.max || 0;
+  var raw = String(el.value).trim(), n = +raw;
+  var st = { el: el, min: min, max: max, raw: raw, n: n, ok: false, msg: "" };
+  var rng = intCount(min) + "–" + intCount(max) + " 秒的整数";
+  if (raw === "" || !isFinite(n)) st.msg = "填一个数字：" + rng;
+  else if (n < min) st.msg = "最少 " + intCount(min) + " 秒";
+  else if (n > max) st.msg = "最多 " + intCount(max) + " 秒";
+  else if (n !== Math.round(n) || !el.checkValidity()) st.msg = "秒数只能是整数";
+  else { st.ok = true; st.n = Math.round(n); }
+  return st;
+}
+function durValue() { var d = durState(); return d.ok ? d.n : 0; }
+/* the hint under the field is permanent — it states the range in the calm
+   state and the VIOLATED bound, in red, the moment the value leaves it */
+function syncDurHint() {
+  ["vdur", "mdur"].forEach(function (id) {
+    var el = $(id), hint = $(id + "hint");
+    var mine = (kind === "video" && id === "vdur") || (kind === "music" && id === "mdur");
+    var base = intCount(+el.min) + "–" + intCount(+el.max) + " 秒的整数";
+    if (!mine) { hint.className = "fieldhint"; hint.textContent = base;
+      el.removeAttribute("aria-invalid"); return; }
+    var d = durState();
+    hint.className = "fieldhint" + (d.ok ? "" : " bad");
+    hint.textContent = d.ok ? base : d.msg + "（" + base + "）";
+    el.setAttribute("aria-invalid", d.ok ? "false" : "true");
+  });
 }
 /* ---------------- the generate gate ----------------
    Every reason a generation cannot happen is known here, BEFORE the click: the
@@ -1725,21 +2010,25 @@ function durRange() {
    the truth about what the server will do. */
 function gate() {
   if (!S && !booted)
-    return { block: "loading", note: "正在读取本地服务", why: "稍等一下。" };
+    return { block: "loading", short: "正在读取", note: "正在读取本地服务",
+      why: "稍等一下。" };
   if (!S || netDown)
-    return { block: "backend", note: "连不上本地服务",
+    return { block: "backend", short: "服务连不上", note: "连不上本地服务",
       why: "dash 进程可能已退出；恢复后页面会自动继续。" };
   if (!modelsFor(kind).length)
-    return { block: "nomodel", note: "没有可用的" + KIND_LABEL[kind] + "模型",
+    return { block: "nomodel", short: "没有可用模型",
+      note: "没有可用的" + KIND_LABEL[kind] + "模型",
       why: "模型列表没读出来，服务恢复后会自动出现。" };
   var u = usage();
-  if (u.cap > 0 && u.spent >= u.cap)
-    return { block: "cap", note: "额度已用尽 " + money(u.spent) + " / " + money(u.cap),
+  if (u.cap > 0 && u.atCap)
+    return { block: "cap", short: "额度已用尽",
+      note: "额度已用尽 " + money(u.dSpent) + " / " + money(u.dCap),
       why: "超过总额度上限的请求会被直接拒绝。调高上限后才能继续生成。",
-      money: { label: "额度已用尽", value: money(u.spent) + " / " + money(u.cap) },
+      money: { label: "额度已用尽", value: money(u.dSpent) + " / " + money(u.dCap) },
       act: { view: "quota", label: "去改上限 →" } };
   if (u.cap <= 0)
-    return { block: "cap", note: "总额度上限是 " + money(u.cap),
+    return { block: "cap", short: "上限是 " + money(u.cap),
+      note: "总额度上限是 " + money(u.cap),
       why: "上限为 0 时任何生成都会被拒绝。先设一个上限。",
       money: { label: "总额度上限", value: money(u.cap) },
       act: { view: "quota", label: "去设上限 →" } };
@@ -1747,26 +2036,24 @@ function gate() {
      estimate — the page must not wait for the estimate to tell the truth */
   var est = playEst();
   if (S.balance != null && (S.balance <= 0 || (est > 0 && S.balance < est)))
-    return { block: "balance",
+    return { block: "balance", short: "fal 余额不足",
       note: "fal 余额不足 " + money(S.balance) +
         (est > 0 ? "，这次要 " + money(est) : ""),
       why: "去 fal.ai 充值后，余额约 30 秒刷新一次。",
       money: { label: "余额不足",
         value: money(S.balance) + (est > 0 ? " / 需 " + money(est) : "") },
       href: { url: "https://fal.ai/dashboard/billing", label: "去 fal 充值 ↗" } };
-  if (kind !== "image") {
-    var r = durRange(), d = durValue();
-    if (d < r.min || d > r.max)
-      return { block: "duration",
-        note: "时长要在 " + intCount(r.min) + "–" + intCount(r.max) + " 秒之间",
-        why: "现在填的是 " + intCount(d) + " 秒，这个模型接不了。" };
-  }
+  var d = durState();
+  if (!d.ok)
+    return { block: "duration", short: "时长不对", note: "时长" + d.msg,
+      why: "这个模型只接 " + intCount(d.min) + "–" + intCount(d.max) +
+        " 秒的整数；现在填的是「" + (d.raw || "空") + "」。" };
   if (kind === "video" && vidMode(currentModel()).needs && !sourceImage)
-    return { block: "source", note: "这个模型要一张参考图",
-      why: "点参数栏的「参考图…」挑一张，或换一个文生视频模型。" };
+    return { block: "source", short: "缺参考图", note: "这个模型要一张参考图",
+      why: "在参数栏的「参考图」里挑一张，或换一个文生视频模型。" };
   if (!$("prompt").value.trim())
-    return { block: "prompt", note: "先写一句提示词",
-      why: "不会写就展开「套用风格模板」，填三个空自动拼。" };
+    return { block: "prompt", short: "还没写提示词", note: "先写一句提示词",
+      why: "不会写就展开「套用风格模板」，填三个空拼一句。" };
   return { block: "" };
 }
 function applyGate() {
@@ -1774,35 +2061,56 @@ function applyGate() {
   var off = !!g.block && !submitting;
   b.setAttribute("aria-disabled", off ? "true" : "false");
   b.setAttribute("data-tip", off ? g.note + "。" + g.why : "开始生成，按 ⌘/Ctrl + Enter 也可以");
-  /* the banner already carries the global blocks word for word — the row under
-     the composer then only adds the way out, never the same two sentences */
+  /* The dead button ALWAYS says why, right beside itself, in three or four
+     words. The long sentence and the way out belong to whichever surface owns
+     that state: the banner for the page-wide blocks, this row for the local
+     ones — never the same sentence twice on one screen. */
   var onBanner = { cap: 1, balance: 1, backend: 1, nomodel: 1 }[g.block];
+  $("footnote").className = "foot-note";
   $("footnote").innerHTML = g.block
-    ? (onBanner ? "" : '<span class="block">' + esc(g.note) + "</span>") +
-      '<span class="why">' + esc(g.why) +
-      (g.act ? ' <button class="linkbtn" data-view="' + esc(g.act.view) + '">' +
-        esc(g.act.label) + "</button>" : "") +
-      (g.href ? ' <a class="xlink" data-act="ext" target="_blank" rel="noopener"' +
-        ' href="' + esc(g.href.url) + '">' + esc(g.href.label) + "</a>" : "") +
-      "</span>"
-    : "";
+    ? '<span class="block">' + esc(g.short || g.note) + "</span>" +
+      (onBanner ? '<span class="why">按顶部提示处理后即可生成。</span>'
+        : '<span class="why">' + esc(g.why) +
+          (g.act ? ' <button class="linkbtn" data-view="' + esc(g.act.view) + '">' +
+            esc(g.act.label) + "</button>" : "") +
+          (g.href ? ' <a class="xlink" data-act="ext" target="_blank" rel="noopener"' +
+            ' href="' + esc(g.href.url) + '">' + esc(g.href.label) + "</a>" : "") +
+          "</span>")
+    : composeOk
+      ? '<span class="ok-note">已拼好，可以生成了</span>' : "";
   /* over the cap the money slot stops quoting a price the page cannot charge */
   var over = !!g.money;
   var blind = g.block === "backend" || g.block === "nomodel";
+  var noEst = blind || estValue == null;
   $("estwrap").className = "est" + (over ? " over" : "");
   $("estwrap").innerHTML = over
     ? esc(g.money.label) + "<b>" + esc(g.money.value) + "</b>"
-    : '预计花费<b id="est">' + (blind ? "—" : money(estValue)) + "</b>";
-  $("estnote").textContent = over
-    ? (estValue > 0 ? "本次预计 " + money(estValue) : "")
-    : blind ? "读不到价格表" : estFormula(estValue);
+    : '预计花费<b id="est">' + (noEst ? "—" : money(estValue)) + "</b>";
+  $("estnote").textContent = over ? "这一次不会执行"
+    : blind ? "读不到价格表"
+      : estValue == null ? "先把时长改回可用范围"
+        : estFormula(estValue);
+  /* one clip that eats a big slice of what is left says so before the click */
+  var u = usage(), warn = "";
+  if (!over && !noEst && estValue > 0 && u.cap > 0 && u.rem > 0 &&
+      estValue > u.rem * 0.2)
+    warn = "这一次就要花掉剩余额度的 " +
+      intCount(Math.min(100, estValue / u.rem * 100)) + "%";
+  $("estwarn").hidden = !warn;
+  $("estwarn").textContent = warn;
   /* the banner reads the same gate, so it can never disagree with the button */
   if (booted) renderBanner();
   return g;
 }
 var estTimer = null, estSeq = 0, estRemote = true, estValue = 0;
 function estimate() {
+  syncDurHint();
   if (!S || !S.prices) { applyGate(); return; }
+  /* an unusable duration has no price: the slot shows 「—」 instead of keeping
+     the last good number, and no estimate request is sent for it */
+  if (!durState().ok) {
+    estValue = null; estSeq++; clearTimeout(estTimer); applyGate(); return;
+  }
   var local = localEst();
   if (local != null) estValue = local;
   applyGate();
@@ -1820,7 +2128,13 @@ function estimate() {
     });
   }, 200);
 }
+/* 套用模板 writes the textarea from script, and a scripted .value fires no
+   input event: the gate used to keep saying 先写一句提示词 for another 1–2.5s,
+   until the 3s poll happened to re-run it. The button now runs the gate in the
+   same turn as the write, and the row says the prompt is ready. */
 async function compose() {
+  var btn = $("composebtn"), label = btn.textContent;
+  btn.disabled = true; btn.textContent = "拼接中…";
   try {
     var d = await api("/api/compose", {
       kind: kind === "image" ? "image" : "video",
@@ -1828,10 +2142,14 @@ async function compose() {
       action: $("action").value, scene: $("scene").value
     });
     $("prompt").value = d.prompt;
+    composeOk = true;
+    estimate();                    // synchronous: gate + estimate + button
+    $("prompt").dispatchEvent(new Event("input", { bubbles: true }));
     if (d.warnings && d.warnings.length)
       toast("提示词里有模糊词",
         d.warnings.join("、") + "，换成具体的光线、颜色、镜头");
   } catch (e) { toast("套用模板失败", e.message); }
+  finally { btn.disabled = false; btn.textContent = label; }
 }
 async function submitGen() {
   if (submitting) return;
@@ -1842,7 +2160,7 @@ async function submitGen() {
   if (g.block) {
     toast(g.note, g.why);
     if (g.block === "prompt") $("prompt").focus();
-    if (g.block === "duration") durRange().el.focus();
+    if (g.block === "duration") durState().el.focus();
     return;
   }
   var req = genRequest();
@@ -1852,6 +2170,7 @@ async function submitGen() {
   b.disabled = true; b.innerHTML = '<span class="spin"></span>提交中';
   try {
     await api("/api/generate", req);
+    composeOk = false;
     toast("已提交，生成中", money(playEst()) + "，完成后出现在下面", true);
     await refresh();
   } catch (e) {
@@ -1895,14 +2214,17 @@ function tile(t) {
   /* a two-line clamp with the rest only in a hover tooltip hid the prompt from
      every touch reader: the card carries its own 全文 toggle */
   var long = String(t.prompt || "").length > 52;
+  /* a wall of English in a Chinese-first page is labelled for what it is */
+  var latin = !/[一-鿿]/.test(String(t.prompt || ""));
   return '<div class="tile"><div class="' + cls + '">' + media + "</div>" +
     '<div class="tile-body"><div class="tile-meta">' + chip +
     '<span class="num">' + money(t.est_usd) + "</span>" +
     '<span class="dim" style="margin-left:auto">' + esc(whenText(t.ts)) + "</span>" +
     "</div>" + audio +
+    '<span class="tile-lbl">提示词' + (latin ? "（英文）" : "") + "</span>" +
     '<div class="tile-p" data-p="' + esc(t.id) + '">' + esc(t.prompt) + "</div>" +
     (long ? '<button class="pmore" data-act="pmore" data-p="' + esc(t.id) +
-      '" aria-expanded="false">全文 ▾</button>' : "") +
+      '" aria-expanded="false">全文<span class="chev"></span></button>' : "") +
     err + acts + "</div></div>";
 }
 function renderResults() {
@@ -1945,16 +2267,22 @@ function jobStatus(j) {
 }
 /* the row says how far it got; the full stepper is the detail's job. A finished
    job does not say 「7/7 成片」 next to a 「已成片」 chip — the chip says that. */
+/* 进度 is measured the way 额度 measures spend — a bar first, then the count */
+function bar(pct, done) {
+  return '<span class="minibar' + (done ? " done" : "") + '"><i style="width:' +
+    Math.max(0, Math.min(100, pct)).toFixed(1) + '%"></i></span>';
+}
 function progCell(j) {
   var done = j.steps || [];
-  if (!done.length) return '<span class="prog"><b>0/' + STEP_ORDER.length +
-    '</b><span class="s">未开始</span></span>';
+  if (!done.length) return '<span class="prog">' + bar(0) + '<b>0/' +
+    STEP_ORDER.length + '</b><span class="s">未开始</span></span>';
   var total = Math.max(STEP_ORDER.length, done.length);
   var last = done[done.length - 1];
   var tail = j.final ? "" : '<span class="s">' + esc(STEP_LABEL[last] || last) + "</span>";
   return '<span class="prog" tabindex="0" data-tip="已完成：' + esc(done.map(function (k) {
     return STEP_LABEL[k] || k;
-  }).join(" → ")) + '"><b>' + intCount(done.length) + "/" + intCount(total) + "</b>" +
+  }).join(" → ")) + '">' + bar(done.length / total * 100, !!j.final) +
+    "<b>" + intCount(done.length) + "/" + intCount(total) + "</b>" +
     tail + "</span>";
 }
 /* A column that is 「—」 in every row is not information, it is furniture: the
@@ -1962,7 +2290,7 @@ function progCell(j) {
 var JOB_COLS = [
   { cls: "name c-name", th: "任务", always: true,
     cell: function (j) {
-      return esc(j.name) + '<span class="rowchev" aria-hidden="true">›</span>';
+      return esc(j.name) + '<span class="rowchev xs" aria-hidden="true">›</span>';
     } },
   { cls: "c-flow", th: "流程", has: function (j) { return (j.spec || {}).flow; },
     cell: function (j) { return esc((j.spec || {}).flow); } },
@@ -1981,7 +2309,11 @@ var JOB_COLS = [
     cell: function (j) {
       return '<span class="cardlbl">预估全程 </span>' + money(j.estimate_usd);
     } },
-  { cls: "c-status", th: "状态", always: true, cell: jobStatus }
+  { cls: "c-status", th: "状态", always: true, cell: jobStatus },
+  /* the drill-in marker closes the row at the right edge — on every width, not
+     only on the phone — so the columns stop huddling in the left half */
+  { cls: "c-go", th: "", always: true,
+    cell: function () { return '<span class="rowchev" aria-hidden="true">›</span>'; } }
 ];
 function renderJobs() {
   var jobs = S.jobs || [];
@@ -1997,8 +2329,12 @@ function renderJobs() {
   var s = JSON.stringify(jobs.map(function (j) {
     return [j.name, j.steps, j.cost_usd, j.awaiting_review, !!j.final];
   })) + "|" + openJob + "|" + cols.length;
+  /* the row is the ONLY way into a job's detail, so it is a real control for
+     the keyboard too: role=button, in the tab order, Enter/Space opens it */
   var rows = jobs.map(function (j) {
-    return '<tr data-act="job" data-name="' + esc(j.name) + '"' +
+    return '<tr data-act="job" data-name="' + esc(j.name) + '" role="button"' +
+      ' tabindex="0" aria-expanded="' + (openJob === j.name ? "true" : "false") +
+      '" aria-label="' + esc(j.name) + ' 的任务详情"' +
       (openJob === j.name ? ' class="on"' : "") + ">" +
       cols.map(function (c) {
         return '<td class="' + c.cls + '">' + (c.cell(j) || DASH) + "</td>";
@@ -2009,18 +2345,27 @@ function renderJobs() {
     "<thead><tr>" + cols.map(function (c) {
       return '<th class="' + c.cls.replace("name ", "") + '">' + esc(c.th) + "</th>";
     }).join("") + "</tr></thead>" +
-    "<tbody>" + rows + "</tbody></table></div>" +
-    '<p class="jobsnote">批量任务由 Claude Code 用 ' +
-    '<code class="mono">reelforge run jobs/xxx.yaml</code> 创建；' +
-    "这里只看进度、选关键帧和成片。</p>");
+    "<tbody>" + rows + "</tbody></table></div>");
+  paint("jobshelp", "help", $("jobshelp"),
+    '<div class="card pad" style="margin-top:16px">' +
+    '<h2 class="sec-title">再跑一个批量任务</h2>' +
+    '<p class="jobsnote" style="margin-top:8px">批量任务由 Claude Code 创建并运行' +
+    '（<code class="mono">reelforge run jobs/xxx.yaml</code>）：' +
+    "它会配乐、分镜、出关键帧，然后停下来让你在这一页选图，最后合成成片。</p>" +
+    '<div class="row" style="margin-top:12px">' +
+    '<button class="btn" data-act="help">看怎么让 Claude Code 跑 →</button>' +
+    '<button class="btn" data-view="create">先自己生成一张 →</button></div></div>');
 }
 function stepper(done, awaiting) {
   var keys = STEP_ORDER.slice();
   Object.keys(done).forEach(function (k) { if (keys.indexOf(k) < 0) keys.push(k); });
+  var isOk = function (k) { return Object.prototype.hasOwnProperty.call(done, k); };
   return '<div class="steps">' + keys.map(function (k, i) {
-    var ok = Object.prototype.hasOwnProperty.call(done, k);
+    var ok = isOk(k);
     var cur = awaiting && k === "review";
-    return (i ? '<span class="step-bar"></span>' : "") +
+    /* a connector between two finished steps belongs to the finished chain */
+    return (i ? '<span class="step-bar' + (isOk(keys[i - 1]) ? " ok" : "") +
+      '"></span>' : "") +
       '<span class="step ' + (cur ? "cur" : ok ? "ok" : "") + '">' +
       '<span class="dot">' + (ok && !cur ? "✓" : "") + "</span>" +
       esc(STEP_LABEL[k] || k) + "</span>";
@@ -2042,9 +2387,12 @@ function timeline(plan, beats) {
       "：" + s.start.toFixed(2) + "s – " + s.end.toFixed(2) + "s" +
       (s.on_drop ? "（drop）" : "") + '">' + shotNo(s.index) + "</div>";
   }).join("");
+  /* every other tick carries .thin: at phone widths the full set of beats was
+     a grey smear, so half of them drop out there and the beat is still read */
   if (beats && beats.beat_times)
-    h += beats.beat_times.map(function (t) {
-      return '<div class="tl-tick" style="left:' + (t / total * 100).toFixed(3) + '%"></div>';
+    h += beats.beat_times.map(function (t, i) {
+      return '<div class="tl-tick' + (i % 2 ? " thin" : "") + '" style="left:' +
+        (t / total * 100).toFixed(3) + '%"></div>';
     }).join("");
   if (beats && beats.drop_time != null)
     h += '<div class="tl-drop" style="left:' +
@@ -2092,25 +2440,24 @@ async function renderJobDetail() {
   var awaiting = !!(d.review_request && !d.review);
   /* the title row carries the name and the state once; the numbers the table
      row already showed are gathered below it, as this job's facts */
-  var h = '<div class="card detail elev"><div class="detail-head">' +
+  /* the highlighted row 40px above already says the name, the state and the
+     cost: the panel adds what the row could not fit, it does not repeat it */
+  var h = '<div class="card detail"><div class="detail-head">' +
     "<h1>" + esc(openJob) + "</h1>" +
-    (awaiting ? '<span class="chip wait">待选图</span>'
-      : done.assemble ? '<span class="chip done">已成片</span>'
-        : '<span class="chip run">进行中</span>') +
     '<span class="spacer"></span>' +
-    '<button class="btn tiny" data-act="closejob">收起<span class="chev" ' +
-    'style="transform:rotate(-135deg)"></span></button></div>';
+    '<button class="btn tiny" data-act="closejob">收起</button></div>';
   var row = (S.jobs || []).filter(function (j) { return j.name === openJob; })[0] || {};
   var sp = row.spec || {};
-  var facts = [["已花费", money(st.cost_usd)]];
+  var facts = [];
   if (sp.budget_usd != null) facts.push(["预算", money(sp.budget_usd)]);
   if (row.estimate_usd != null) facts.push(["预估全程", money(row.estimate_usd)]);
   if (done.plan && done.plan.length)
     facts.push(["镜头", intCount(done.plan.length) + " 个"]);
   if (sp.style) facts.push(["风格", esc(sp.style)]);
-  h += '<div class="facts">' + facts.map(function (f) {
-    return "<span>" + esc(f[0]) + "<b>" + f[1] + "</b></span>";
-  }).join("") + "</div>";
+  if (facts.length)
+    h += '<div class="facts">' + facts.map(function (f) {
+      return "<span>" + esc(f[0]) + "<b>" + f[1] + "</b></span>";
+    }).join("") + "</div>";
   h += stepper(done, awaiting);
   if (done.plan) {
     h += '<div class="subhead">卡点时间线</div>' + timeline(done.plan, done.beats);
@@ -2154,13 +2501,22 @@ async function renderJobDetail() {
     /* The 成片 is the protagonist and takes the whole column; 配乐 is a
        full-width bar under it. Each caption sits directly under its player. */
     h += '<div class="mediarow">';
-    if (done.assemble)
+    if (done.assemble) {
+      /* the stage shows the film's own first keyframe instead of a blank grey
+         rectangle: the poster is a picture the reader already chose */
+      var kf = done.review && Object.keys(done.review).sort(function (a, b) {
+        return (+a) - (+b);
+      })[0];
+      var poster = kf != null
+        ? "/files/" + openJob + "/assets/" + String(done.review[kf]).split("/").pop()
+        : "";
       h += '<div class="m-video"><div class="subhead">成片</div><div class="player">' +
-        videoPlayer("/files/" + openJob + "/final.mp4") + "</div>" +
+        videoPlayer("/files/" + openJob + "/final.mp4", false, poster) + "</div>" +
         '<p class="m-note">' +
         (done.plan && done.plan.length
           ? "共 " + intCount(done.plan.length) + " 个镜头，按节拍拼成。"
           : "按节拍剪好的成片。") + "</p></div>";
+    }
     if (done.music)
       h += '<div class="m-audio"><div class="subhead">配乐</div>' +
         audioPlayer("/files/" + openJob + "/assets/music.wav") +
@@ -2222,20 +2578,25 @@ var TIER_NOTE = {              // the badge's tooltip — cheap first
   "旗舰档": "最贵，封面级才用"
 };
 var AWARD = "性价比王", AWARD_NOTE = "同画质里单价最低";
+/* every explainer is reachable by keyboard: tabindex + the aria-describedby
+   the tooltip adds while it is open */
 function tierBadge(tier) {
-  return '<span class="tier ' + (TIER_CLASS[tier] || "") + '" data-tip-side' +
+  return '<span class="tier ' + (TIER_CLASS[tier] || "") + '" tabindex="0"' +
     ' data-tip="' + esc("档位 " + tier + "：" + (TIER_NOTE[tier] || "")) + '">' +
     esc(tier) + "</span>";
 }
 function falUrl(m) {
   return "https://fal.ai/models/" + String(m.endpoint || "").replace(/^\/+/, "");
 }
-/* a per-resolution price list breaks between its " · " parts and never inside
-   one, so a card never shows a stranded "1080P $0.02/" + "秒" */
+/* A price list breaks between its " · " parts and never inside one, so a card
+   never shows a stranded "1080P $0.02/" + "秒". The separator travels with the
+   part that FOLLOWS it: as a bare text node between the spans it was itself a
+   break opportunity, and lines ended with a dangling 「·」. */
 function nowrapParts(text) {
-  return text.split(" · ").map(function (part) {
-    return part.length <= 22 ? '<span class="nw">' + esc(part) + "</span>" : esc(part);
-  }).join(" · ");
+  return text.split(" · ").map(function (part, i) {
+    var seg = (i ? "· " : "") + part;
+    return seg.length <= 24 ? '<span class="nw">' + esc(seg) + "</span>" : esc(seg);
+  }).join(" ");
 }
 /* The price slot answers "can I use this, and what does it cost". For a
    display-only model the answer starts with 暂不可选 in plain text — not with
@@ -2272,6 +2633,53 @@ function nameParts(m) {
   return { name: label.slice(0, at).trim(),
     qual: label.slice(at).replace(/[（()）]/g, "").replace(/·/g, " · ").trim() };
 }
+/* the opened card's detail: one full-width panel per grid, placed after the
+   LAST card of the opened card's row (layoutLib), never inside the grid flow */
+function modelPanel(m, tier) {
+  var np = nameParts(m);
+  return '<div class="mdetail" data-for="' + esc(m.id) + '">' +
+    '<div class="mdetail-hd"><span class="mdetail-name">' + esc(np.name) +
+    "</span>" + (np.qual ? '<span class="mcard-qual">' + esc(np.qual) +
+      "</span>" : "") + "</div>" +
+    (m.pros ? '<div class="mline"><span class="k">优点</span><span>' +
+      esc(m.pros) + "</span></div>" : "") +
+    (m.cons ? '<div class="mline"><span class="k">缺点</span><span>' +
+      esc(m.cons) + "</span></div>" : "") +
+    (m.usage ? '<div class="mline"><span class="k">用法</span><span>' +
+      esc(m.usage) + "</span></div>" : "") +
+    '<div class="mcard-acts">' +
+    (m.selectable === false ? ""
+      : '<button class="btn tiny" data-act="usemodel" data-id="' + esc(m.id) +
+        '">用它创作 →</button>') +
+    /* the endpoint slug is a developer's string: it lives in the tooltip, the
+       link says where it goes */
+    (m.endpoint
+      ? '<a class="endpoint" data-act="ext" target="_blank" rel="noopener"' +
+        ' data-tip="' + esc(m.endpoint) + '" href="' + esc(falUrl(m)) +
+        '">在 fal.ai 看这个模型 ↗</a>'
+      : "") +
+    '<button class="btn tiny" data-act="model" data-id="' + esc(m.id) +
+    '">收起</button></div></div>';
+}
+/* The grid's column count is a layout fact, not a constant: the panel is moved
+   to the end of its card's row so the row above it never breaks apart. */
+function layoutLib() {
+  var grids = $("library").querySelectorAll(".libgrid");
+  for (var i = 0; i < grids.length; i++) {
+    var g = grids[i], panel = g.querySelector(".mdetail");
+    if (!panel) continue;
+    var cards = [].slice.call(g.querySelectorAll(".mcard"));
+    var at = -1;
+    for (var j = 0; j < cards.length; j++)
+      if (cards[j].dataset.id === panel.dataset.for) at = j;
+    if (at < 0) continue;
+    var cols = getComputedStyle(g).gridTemplateColumns.split(" ")
+      .filter(function (x) { return x; }).length || 1;
+    var end = Math.min(cards.length - 1, Math.floor(at / cols) * cols + cols - 1);
+    var after = cards[end].nextSibling;
+    if (after !== panel) g.insertBefore(panel, after);
+  }
+}
 var libQuery = "", libOnly = false;
 function libMatch(m) {
   if (libOnly && m.selectable === false) return false;
@@ -2284,7 +2692,7 @@ function renderLibrary() {
   var all = S.models || [];
   var models = all.filter(libMatch);
   var s = JSON.stringify(models.map(function (m) { return m.id; })) + "|" +
-    JSON.stringify(expanded) + "|" + libQuery + "|" + libOnly;
+    openModel + "|" + libQuery + "|" + libOnly;
   $("libcount").textContent = models.length === all.length
     ? intCount(all.length) + " 个模型"
     : "显示 " + intCount(models.length) + " / " + intCount(all.length) + " 个模型";
@@ -2295,54 +2703,38 @@ function renderLibrary() {
   var h = groups.map(function (g) {
     var list = models.filter(function (m) { return m.kind === g; });
     if (!list.length) return "";
+    var panel = "";
+    var cards = list.map(function (m) {
+      var open = openModel === m.id, tier = tierOf(m), np = nameParts(m);
+      var pros = m.summary || m.pros || "";
+      /* Every card in a row is the same height and its price line is pinned to
+         the bottom, so a row reads as one band. Opening a card does NOT grow
+         it: the detail below is a full-width panel (see .mdetail + layoutLib),
+         so row-mates never inflate and no L-shaped hole can appear. */
+      if (open) panel = modelPanel(m, tier);
+      return '<div class="mcard' + (open ? " open" : "") + '" data-tipbox' +
+        ' data-id="' + esc(m.id) + '">' +
+        '<button type="button" class="mcard-hd" data-act="model" data-id="' +
+        esc(m.id) + '" aria-expanded="' + (open ? "true" : "false") + '">' +
+        '<span class="mcard-name">' + esc(np.name) + "</span>" +
+        (np.qual ? '<span class="mcard-qual">' + esc(np.qual) + "</span>" : "") +
+        (TIER_CLASS[tier] ? tierBadge(tier) : "") +
+        (tier === AWARD ? '<span class="award" tabindex="0" data-tip="' +
+          esc(AWARD_NOTE) + '">' + esc(AWARD) + "</span>" : "") +
+        '<span class="chev"></span></button>' +
+        '<div class="mcard-sum">' + esc(pros) + "</div>" +
+        '<div class="mcard-price">' + priceHtml(m) + "</div></div>";
+    }).join("");
     return '<div class="libgroup"><div class="sec-head" style="margin-top:0">' +
-      '<span class="lbl">' + esc(KIND_LABEL[g] || g) + "</span>" +
+      '<h2 class="sec-title">' + esc(KIND_LABEL[g] || g) + "</h2>" +
       '<span class="small">' + intCount(list.length) + " 个模型</span></div>" +
-      '<div class="libgrid">' + list.map(function (m) {
-        var open = !!expanded[m.id], tier = tierOf(m), np = nameParts(m);
-        var pros = m.summary || m.pros || "";
-        /* the card sizes to its own content (align-items:start), so opening one
-           can no longer inflate its row-mates with blank space */
-        return '<div class="mcard' + (open ? " open" : "") +
-          (tier === AWARD ? " awarded" : "") + '" data-id="' + esc(m.id) + '">' +
-          (tier === AWARD ? '<span class="award" data-tip="' + esc(AWARD_NOTE) +
-            '">' + esc(AWARD) + "</span>" : "") +
-          '<button type="button" class="mcard-hd" data-act="model" data-id="' +
-          esc(m.id) + '" aria-expanded="' + (open ? "true" : "false") + '">' +
-          '<span class="mcard-name">' + esc(np.name) + "</span>" +
-          (np.qual ? '<span class="mcard-qual">' + esc(np.qual) + "</span>" : "") +
-          (TIER_CLASS[tier] ? tierBadge(tier) : "") +
-          '<span class="chev"></span></button>' +
-          '<div class="mcard-price">' + priceHtml(m) + "</div>" +
-          (open ? "" : '<div class="mcard-sum">' + esc(pros) + "</div>") +
-          (open ? '<div class="mcard-more">' +
-            (m.pros ? '<div class="mline"><span class="k">优点</span><span>' +
-              esc(m.pros) + "</span></div>" : "") +
-            (m.cons ? '<div class="mline"><span class="k">缺点</span><span>' +
-              esc(m.cons) + "</span></div>" : "") +
-            (m.usage ? '<div class="mline"><span class="k">用法</span><span>' +
-              esc(m.usage) + "</span></div>" : "") +
-            (TIER_CLASS[tier] ? '<div class="mline"><span class="k">档位</span><span>' +
-              esc(tier + " · " + (TIER_NOTE[tier] || "")) + "</span></div>" : "") +
-            '<div class="mcard-acts">' +
-            (m.selectable === false ? ""
-              : '<button class="btn tiny" data-act="usemodel" data-id="' + esc(m.id) +
-                '">用它创作 →</button>') +
-            (m.endpoint
-              ? '<a class="endpoint" data-act="ext" target="_blank" rel="noopener"' +
-                ' href="' + esc(falUrl(m)) + '">在 fal 打开 ' + esc(m.endpoint) +
-                " ↗</a>"
-              : '<span class="endpoint" style="color:var(--muted)">' + esc(m.id) +
-                "</span>") +
-            "</div></div>" : "") +
-          "</div>";
-      }).join("") + "</div></div>";
+      '<div class="libgrid">' + cards + panel + "</div></div>";
   }).join("");
   if (!models.length)
     h = '<div class="empty"><p>没有匹配的模型。换个关键词，或看看全部 ' +
       intCount(all.length) + " 个。</p>" +
       '<button class="btn" data-act="libclear">清空筛选</button></div>';
-  paint("library", s, $("library"), h);
+  if (paint("library", s, $("library"), h)) layoutLib();
 }
 
 /* ---------------- quota ---------------- */
@@ -2356,17 +2748,35 @@ var PRICE_LABEL = {
 /* usage as a number the meter and the sentence both read from; a missing or
    broken figure becomes 0, never NaN. `pct` is the TRUE share — 108% stays
    108% — and only the painted bar is clamped to its own width. */
+/* ONE rounding rule decides every number on this subject. The page used to
+   print 「已用 $5.00 占上限 100.0%」 beside 「剩余额度 $0.002」 on one screen,
+   because the share was computed from the raw figures and the remainder from
+   the rounded ones. Everything below is computed from the DISPLAYED spend and
+   cap (dSpent/dCap, money()'s own rounding), so the share, the remainder, the
+   bar's colour and the generate gate can never disagree again. */
+function moneyRound(v) {
+  var n = Math.abs(+v);
+  if (!isFinite(n)) return 0;
+  return n < 0.01 ? Math.round(n * 1000) / 1000 : Math.round(n * 100) / 100;
+}
 function usage() {
-  if (!S) return { cap: 0, spent: 0, pct: 0, rem: 0, over: false, lvl: "" };
+  if (!S) return { cap: 0, spent: 0, dCap: 0, dSpent: 0, pct: 0, rem: 0,
+    over: false, atCap: false, lvl: "" };
   var cap = +((S.limits && S.limits.global_cap_usd)) || 0;
   var spent = +S.spent || 0;
   if (!isFinite(cap) || cap < 0) cap = 0;
   if (!isFinite(spent) || spent < 0) spent = 0;
-  var pct = cap > 0 ? spent / cap * 100 : 0;
+  var dCap = moneyRound(cap), dSpent = moneyRound(spent);
+  var pct = dCap > 0 ? dSpent / dCap * 100 : 0;
   if (!isFinite(pct)) pct = 0;
-  return { cap: cap, spent: spent, pct: pct, rem: cap - spent,
-    over: cap > 0 && spent > cap,
-    lvl: pct >= 100 ? "bad" : pct >= 80 ? "warn" : "" };
+  var shown = +pct.toFixed(1);          // the share the page actually prints
+  var atCap = dCap > 0 && shown >= 100; // 100.0% displayed IS "at the cap"
+  return { cap: cap, spent: spent, dCap: dCap, dSpent: dSpent,
+    /* the remainder is rounded too, or float dust prints 「$0.010」 where the
+       two displayed numbers say $0.01 */
+    pct: pct, shown: shown, rem: atCap ? 0 : moneyRound(dCap - dSpent),
+    over: dCap > 0 && dSpent > dCap, atCap: atCap,
+    lvl: shown >= 100 ? "bad" : shown >= 80 ? "warn" : "" };
 }
 /* A bar that is 100% hatched reads as "disabled" or "still loading", so the
    hatch is kept for exactly one state: nothing spent yet. Any real spend gets
@@ -2377,10 +2787,12 @@ function fillMeter(bar, u) {
   bar.className = bar.className.split(" ")[0] +
     (empty ? " zero" : u.lvl ? " " + u.lvl : "");
   fill.hidden = empty;
-  fill.style.width = Math.min(100, Math.max(2, u.pct)) + "%";
+  /* the TRUE share, with a 1px hairline floor in CSS — the old 2% floor drew
+     a 2.5%-wide fill under a caption that said 「不到 0.1%」 */
+  fill.style.width = Math.min(100, u.pct) + "%";
   if (u.cap <= 0) return "上限为 " + money(u.cap);   // a 0 cap rejects everything
-  return u.pct === 0 ? "尚未使用" : u.pct < 0.1 ? "占上限不到 0.1%"
-    : "占上限 " + u.pct.toFixed(1) + "%";
+  return u.pct === 0 ? "尚未使用" : u.shown < 0.1 ? "占上限不到 0.1%"
+    : "占上限 " + u.shown.toFixed(1) + "%";
 }
 /* 「试玩台 + 批量任务」 was a claim with no numbers behind it. The playground
    half is knowable here (every submit charges the ledger), so the rest of the
@@ -2392,37 +2804,48 @@ function spendSplit(u) {
     return a + (t.status === "failed" ? 0 : +t.est_usd || 0);
   }, 0);
   play = Math.min(play, u.spent);
-  return "试玩台 " + money(play) + " · 批量任务 " + money(Math.max(0, u.spent - play));
+  /* 「批量任务」 is a name: it may not break after 批量任 on a 390px card */
+  return '<span class="nw">试玩台 ' + money(play) + "</span> · " +
+    '<span class="nw">批量任务 ' + money(Math.max(0, u.spent - play)) + "</span>";
 }
+var TOPUP = '<a class="xlink" data-act="ext" target="_blank" rel="noopener"' +
+  ' href="https://fal.ai/dashboard/billing">去 fal 充值 ↗</a>';
 function renderQuota() {
   var u = usage();
+  /* an empty wallet blocks every generation, so this page may not answer
+     「尚未使用 / 一切正常」 while 创作 is refusing to run: the balance tile
+     carries the same state and the same way out. */
+  var dry = S.balance != null && S.balance <= 0;
+  var overBy = Math.max(0, u.dSpent - u.dCap);
   var s = [S.balance, u.spent, u.cap, (S.playground || []).length].join("|");
   paint("quotastats", s, $("quotastats"),
-    '<div class="stat"><div class="k">fal 余额</div><div class="v">' +
-    (S.balance == null ? "不可用" : money(S.balance)) +
-    '</div><div class="n">fal 账户里真实的钱，约 30 秒刷新</div></div>' +
-    '<div class="stat"><div class="k">累计消耗</div><div class="v">' + money(u.spent) +
+    '<div class="stat' + (dry ? " bad" : "") + '"><div class="k">fal 余额</div>' +
+    '<div class="v">' + (S.balance == null ? "不可用" : money(S.balance)) +
+    '</div><div class="n">' +
+    (dry ? "钱包空了，现在任何生成都会被拒绝。" + TOPUP
+      : "fal 账户里真实的钱，约 30 秒刷新") + "</div></div>" +
+    '<div class="stat"><div class="k">累计消耗</div><div class="v">' + money(u.dSpent) +
     '</div><div class="n">' + spendSplit(u) + "</div></div>" +
-    '<div class="stat' + (u.over ? " bad" : "") + '"><div class="k">' +
+    '<div class="stat' + (u.over ? " bad" : u.atCap ? " warn" : "") + '"><div class="k">' +
     (u.over ? "已超支" : "剩余额度") + '</div><div class="v">' +
-    (u.over ? money(-u.rem) : money(u.rem)) + '</div><div class="n">' +
-    (u.over ? "已用 " + u.pct.toFixed(1) + "%，上限 " + money(u.cap) +
+    (u.over ? money(overBy) : money(u.rem)) + '</div><div class="n">' +
+    (u.over ? "已用 " + u.shown.toFixed(1) + "%，超过上限 " + money(u.dCap) +
       "，新的生成会被拒绝"
-      : "本机自己设的上限 " + money(u.cap) + "，不是钱包余额") +
+      : u.atCap ? "已经用满上限 " + money(u.dCap) + "，新的生成会被拒绝"
+        : "本机自己设的上限 " + money(u.dCap) + "，不是钱包余额") +
     "</div></div>");
   if (document.activeElement !== $("cap")) $("cap").value = u.cap.toFixed(2);
   syncCapSave();
-  $("capplus").hidden = !u.over;
-  $("capexplain").textContent = u.over
-    ? "已经超过上限，任何新的生成都会被直接拒绝。把上限调高到实际需要的数字，或者等这台机器重新记账。"
-    : "所有消费（试玩台 + 批量任务）共用这一个上限；到达上限后请求会被拒绝，不会偷偷扣钱。";
+  $("capplus").hidden = !(u.over || u.atCap);
+  /* the tile above states the consequence once; this line explains the CONTROL */
+  $("capexplain").textContent = u.over || u.atCap
+    ? "把上限调高到实际需要的数字，就能继续生成。"
+    : "试玩台和批量任务共用这一个上限，改了立刻生效。";
   var share = fillMeter($("capbar"), u);
   $("capbar").setAttribute("aria-label",
-    "已用 " + money(u.spent) + "，" + share);
-  $("capline").textContent = "已用 " + money(u.spent) + "，上限 " + money(u.cap) +
-    "，" + share + "。" +
-    (u.over ? "超出的部分不会被执行：超过上限的请求直接拒绝。"
-      : "超过上限的请求会被直接拒绝，不会扣钱。");
+    "已用 " + money(u.dSpent) + "，" + share);
+  $("capline").textContent = "已用 " + money(u.dSpent) + " / 上限 " +
+    money(u.dCap) + "，" + share + "。";
   var P = S.prices || {}, rows = "";
   function prow(k, v) {
     rows += '<div class="prow"><span class="k">' + esc(k) + '</span>' +
@@ -2447,41 +2870,53 @@ function renderQuota() {
    always with the way out), then the promo — and the promo only on 创作, where
    the price it quotes is actually being spent. */
 function renderBanner() {
-  var el = $("banner"), txt = $("bannertext"), act = $("banneract"), x = $("bannerx");
+  var el = $("banner"), txt = $("bannertext"), act = $("banneract");
   var g = gate();
   var dlNow = S && S.discount_deadline;
   /* cheap guard: this runs on every keystroke through applyGate() */
   var s = [g.block, g.note, view, dlNow, store.get("rf-banner-off")].join("|");
   if (sig.banner === s) return;
   sig.banner = s;
+  /* ONE severity per outage: the backend being down is a warning, and it is
+     stated HERE, once — the toast that used to shout it in red at the same
+     moment is gone, and the empty states below only refer to this line. */
   var blocking = { cap: "bad", balance: "warn", backend: "warn", nomodel: "warn" };
-  if (blocking[g.block]) {
-    el.className = "banner " + blocking[g.block];
-    txt.innerHTML = "<b>" + esc(g.note) + '</b><span class="why">' +
-      esc(g.why) + "</span>";
-    if (g.act) {
-      act.hidden = false;
-      act.textContent = g.act.label;
-      act.setAttribute("data-view", g.act.view);
-    } else if (g.block === "backend" || g.block === "nomodel") {
-      act.hidden = false;
-      act.textContent = "重新连接";
-      act.removeAttribute("data-view");
-      act.setAttribute("data-act", "retry");
-    } else act.hidden = true;
-    x.hidden = true;                       // a blocking notice is not dismissible
-    el.hidden = false;
-    return;
-  }
-  act.hidden = true; x.hidden = false;
-  el.className = "banner";
-  var dl = S && S.discount_deadline;
-  if (!dl || view !== "create" || store.get("rf-banner-off") === dl) {
-    el.hidden = true;
-    return;
-  }
+  /* a discount is not worth reading while nothing can be generated */
+  renderPromo(blocking[g.block] ? null : dlNow);
+  /* 额度 IS the remedy page for both money states: its own tiles say the same
+     thing louder, with the control right underneath, so the strip steps aside
+     instead of printing the sentence a second time on one screen */
+  var owned = view === "quota" && (g.block === "cap" || g.block === "balance");
+  if (!blocking[g.block] || owned) { el.hidden = true; act.hidden = true; return; }
+  el.className = "banner " + blocking[g.block];
+  txt.innerHTML = "<b>" + esc(g.note) + '</b><span class="why">' +
+    esc(g.why) + "</span>";
+  if (g.act) {
+    act.hidden = false;
+    act.textContent = g.act.label;
+    act.removeAttribute("data-act");
+    act.setAttribute("data-view", g.act.view);
+  } else if (g.href) {
+    act.hidden = false;
+    act.textContent = g.href.label;
+    act.removeAttribute("data-view");
+    act.setAttribute("data-act", "topup");
+    act.dataset.url = g.href.url;
+  } else if (g.block === "backend" || g.block === "nomodel") {
+    act.hidden = false;
+    act.textContent = "重新连接";
+    act.removeAttribute("data-view");
+    act.setAttribute("data-act", "retry");
+  } else act.hidden = true;
+  el.hidden = false;
+}
+/* the discount notice is a promo, not a state: it lives inside 创作 so that
+   switching tabs no longer moves the whole page by its height */
+function renderPromo(dl) {
+  var el = $("promo");
+  if (!dl || store.get("rf-banner-off") === dl) { el.hidden = true; return; }
   var days = Math.ceil((new Date(dl) - Date.now()) / 864e5);
-  txt.innerHTML = days > 0
+  $("promotext").innerHTML = days > 0
     ? "H3 视频 75% 折扣还剩 <b>" + intCount(days) + "</b> 天，" + esc(dl) +
       " 之后每秒单价涨 4 倍。"
     : "H3 首发折扣已结束，视频单价已涨 4 倍。";
@@ -2489,22 +2924,36 @@ function renderBanner() {
 }
 
 /* ---------------- refresh ---------------- */
+/* the chip stops presenting a dead poll's last number as live money: it dims,
+   drops the meter, and says why — for 50 seconds it used to keep showing
+   「余额 $9.31」 as if nothing had happened */
+function setStale(down) {
+  $("balchip").classList.toggle("stale", down);
+  $("balstale").hidden = !down;
+  if (down) {
+    $("bal").innerHTML = '<span class="dim">—</span>';
+    $("balchip").setAttribute("data-tip",
+      "连不上本地 dash 服务，读不到余额和已花额度。恢复后会自动更新。");
+  }
+}
 async function refresh() {
   var d;
   try { d = await api("/api/summary"); netDown = false; booted = true; }
   catch (e) {
     booted = true;
-    /* a toast that fades leaves a silently broken page: the failure stays on
-       the banner, on the button, and where the data should have been */
-    if (!netDown) { netDown = true; toast("连不上本地服务", "dash 进程可能已退出"); }
+    netDown = true;
+    /* ONE surface owns the outage: the banner. No red toast on top of an amber
+       banner, and no second 重新连接 button in the empty states below. */
+    setStale(true);
+    syncModels();
+    sig.banner = null;
     renderBanner();
     applyGate();
     if (!S) {
       $("rescount").textContent = "";
       paint("results", "down", $("results"),
         '<div class="empty"><p>读取失败：连不上本地 dash 服务，' +
-        "所以这里是空的，而不是「你没生成过」。</p>" +
-        '<button class="btn" data-act="retry">重新连接</button></div>');
+        "所以这里是空的，而不是「你没生成过」。顶部那条提示里有重新连接。</p></div>");
       paint("jobs", "down", $("jobswrap"),
         '<div class="empty"><p>读取失败：连不上本地 dash 服务。</p></div>');
     }
@@ -2513,6 +2962,7 @@ async function refresh() {
   var was = !!S;
   S = d;
   if (!was) { sig.results = null; sig.jobs = null; }
+  setStale(false);
   $("bal").textContent = S.balance == null ? "不可用" : money(S.balance);
   var u = usage();
   var share = fillMeter($("meter"), u);
@@ -2559,11 +3009,13 @@ function styleLabel(k) {
   var name = at > 0 ? d.slice(0, at).trim() : "";
   return name || k;
 }
+/* the slug is a developer's string (jobs/*.yaml writes it): it belongs in the
+   field's tooltip, not in the sentence a beginner is reading */
 function styleDesc() {
   var k = $("style").value;
   var d = (S && S.style_info && S.style_info[k]) || "";
-  $("styledesc").innerHTML = esc(d) +
-    (k ? '<span class="slug"> · CLI 名 ' + esc(k) + "</span>" : "");
+  $("styledesc").textContent = d;
+  $("style").setAttribute("data-tip", d + (k ? "\n任务文件里写作 " + k : ""));
 }
 
 /* ---------------- events ---------------- */
@@ -2578,7 +3030,6 @@ document.addEventListener("click", function (ev) {
   if (act === "ext") return;   // outbound fal.ai link: let the browser handle it
   if (act === "src") useAsSource(a.dataset.file);
   else if (act === "srcpick") { srcOpen = !srcOpen; renderSource(); }
-  else if (act === "srcclose") { srcOpen = false; renderSource(); }
   else if (act === "srcuse") pickSource(a.dataset.file);
   else if (act === "clearsrc") { sourceImage = null; renderSource(); estimate(); }
   else if (act === "example") {
@@ -2597,10 +3048,14 @@ document.addEventListener("click", function (ev) {
   else if (act === "logfold") logOpen = !logOpen;
   else if (act === "review") submitReview();
   else if (act === "continue") continueJob();
+  /* one card open at a time: the detail is a full-width panel under its row,
+     and two of them would fight over where the row ends */
   else if (act === "model") {
     var id = a.dataset.id;
-    expanded[id] = !expanded[id];
+    openModel = openModel === id ? null : id;
     renderLibrary();
+    var card = $("library").querySelector('.mcard[data-id="' + id + '"] .mcard-hd');
+    if (card) card.focus();
   }
   /* 模型库 → 创作 with that model already chosen: the card's "so what do I do
      with it" answer, instead of a dead end at the fal.ai link */
@@ -2624,14 +3079,29 @@ document.addEventListener("click", function (ev) {
     var p = $("results").querySelector('.tile-p[data-p="' + a.dataset.p + '"]');
     if (!p) return;
     var full = p.classList.toggle("full");
-    a.textContent = full ? "收起 ▴" : "全文 ▾";
+    a.innerHTML = (full ? "收起" : "全文") + '<span class="chev"></span>';
     a.setAttribute("aria-expanded", full ? "true" : "false");
   }
+  else if (act === "topup") window.open(a.dataset.url, "_blank", "noopener");
+  else if (act === "help") openDrawer(true);
   else if (act === "retry") refresh();
+});
+/* the job row is a button: a pointer opens it, and so does the keyboard */
+document.addEventListener("keydown", function (ev) {
+  if (ev.key !== "Enter" && ev.key !== " " && ev.key !== "Spacebar") return;
+  var tr = ev.target.closest ? ev.target.closest('tr[data-act="job"]') : null;
+  if (!tr || ev.target !== tr) return;
+  ev.preventDefault();
+  toggleJob(tr.dataset.name);
 });
 $("composebtn").addEventListener("click", compose);
 $("genbtn").addEventListener("click", submitGen);
-$("prompt").addEventListener("input", applyGate);
+/* a real keystroke retires the 「已拼好」 note; compose()'s own synthetic event
+   (isTrusted false) must not wipe the note it was sent to announce */
+$("prompt").addEventListener("input", function (ev) {
+  if (ev.isTrusted) composeOk = false;
+  applyGate();
+});
 $("style").addEventListener("change", styleDesc);
 rovingKeys($("tabs"), ".tab", function (el) { setView(el.dataset.view); });
 rovingKeys($("kindseg"), "button", function (el) { setKind(el.dataset.kind); });
@@ -2703,8 +3173,8 @@ $("capsave").addEventListener("click", async function () {
     setTimeout(function () { $("capnote").textContent = ""; }, 3000);
   } catch (e) { toast("保存失败", e.message); }
 });
-$("bannerx").addEventListener("click", function () {
-  $("banner").hidden = true;
+$("promox").addEventListener("click", function () {
+  $("promo").hidden = true;
   if (S && S.discount_deadline) store.set("rf-banner-off", S.discount_deadline);
 });
 /* it looks modal, so it behaves modal: role=dialog + aria-modal, focus moves in
@@ -2750,10 +3220,16 @@ document.addEventListener("keydown", function (ev) {
 });
 window.addEventListener("resize", function () {
   if (!$("drawer").hidden) $("drawerback").hidden = window.innerWidth > 520;
+  layoutLib();          // the grid's column count changed: re-place the panel
+});
+/* the tab is in the URL, so the back button works and a link can point at one */
+window.addEventListener("hashchange", function () {
+  setView(location.hash.slice(1) || "create", true);
 });
 
 /* ---------------- boot ---------------- */
 setKind("image");
+setView(location.hash.slice(1) || "create", true);
 refresh();
 setInterval(refresh, 3000);
 setInterval(function () { if (openJob && view === "jobs") renderJobDetail(); }, 5000);
