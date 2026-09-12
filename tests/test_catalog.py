@@ -19,7 +19,8 @@ def test_selectable_models_all_have_estimates():
         if not m["selectable"]:
             continue
         est = est_for(m["id"], width=1080, height=1920, duration=6, resolution="768P")
-        assert 0 < est < 2, f"{m['id']} estimate {est} out of sane range"
+        # flagship tier (Seedance 2.5) legitimately reaches ~$2.8 at 6s/720p
+        assert 0 < est < 5, f"{m['id']} estimate {est} out of sane range"
 
 
 def test_estimates_match_known_prices():
