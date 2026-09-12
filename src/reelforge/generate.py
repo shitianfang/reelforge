@@ -21,7 +21,7 @@ def _first_url(payload: dict, *keys: str) -> str:
             return v["url"]
         if isinstance(v, list) and v and "url" in v[0]:
             return v[0]["url"]
-    raise KeyError(f"no media url in response keys {list(payload)}")
+    raise KeyError(f"no media url in response keys {list(payload)}: {str(payload)[:300]}")
 
 
 def _nearest_aspect(size: tuple[int, int]) -> str:

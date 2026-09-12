@@ -29,10 +29,18 @@ class FalClient:
             status_url, response_url = sub["status_url"], sub["response_url"]
             deadline = time.monotonic() + timeout_s
             while True:
-                s = http.get(status_url).json()
+                sr = http.get(status_url)
+                if sr.status_code >= 400:
+                    raise FalError(f"{model_id} status poll: HTTP {sr.status_code}: {sr.text[:500]}")
+                s = sr.json()
                 st = s.get("status")
                 if st == "COMPLETED":
-                    return http.get(response_url).json()
+                    # COMPLETED means processed, not succeeded: a failed job's
+                    # result fetch answers 4xx with the error in the body.
+                    rr = http.get(response_url)
+                    if rr.status_code >= 400:
+                        raise FalError(f"{model_id} failed: HTTP {rr.status_code}: {rr.text[:800]}")
+                    return rr.json()
                 if st in ("FAILED", "CANCELLED", "ERROR"):
                     raise FalError(f"{model_id} {st}: {s}")
                 if time.monotonic() > deadline:
