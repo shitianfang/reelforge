@@ -1,9 +1,13 @@
 """Local observation + playground console (serves on 127.0.0.1 only).
 
-Read side: balance, ledger totals, spend caps, every run's state and assets.
-Act side: playground generations (image/video/music, model of choice, free or
-recipe-composed prompts), picking review candidates, continuing a gated job.
-All playground spends go through the same machine-wide cap as batch runs.
+Read side: balance, ledger totals, spend caps, every run's state and assets,
+and each run's storyboard — the agent's per-shot plan, which is what the
+homepage draws.
+Act side: per-shot storyboard edits (prompt / chosen candidate / approve /
+redo) through storyboard.update_shot, playground generations (image/video/
+music, model of choice, free or recipe-composed prompts), and continuing a
+gated run. All playground spends go through the same machine-wide cap as
+batch runs.
 """
 
 import json
@@ -16,9 +20,9 @@ import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlparse
 
-from . import generate
+from . import generate, storyboard
 from .config import DISCOUNT_DEADLINE, PRICES, RESOLUTIONS, fal_key
 from .fal import FalClient, get_balance
 from .job import (BudgetExceeded, global_charge, ledger_total, load_limits,
@@ -176,6 +180,64 @@ class Playground:
         return sorted(self.tasks.values(), key=lambda r: -r["ts"])
 
 
+def safe_job(name) -> str:
+    """A job name addresses a directory under runs/ — never a path."""
+    return re.sub(r"[^\w.-]", "", str(name or ""))
+
+
+def media_url(runs_root: Path, job: str, path) -> str | None:
+    """Any asset path the runner recorded → the URL /files/ actually serves.
+
+    State and storyboard files store paths as the run wrote them ("runs/<job>/
+    assets/kf_0_1.png", or absolute under a --workdir). The page can only load
+    what /files/ serves, which is relative to the runs root, so the mapping
+    happens once, here, instead of in string surgery on the page.
+    """
+    if not path:
+        return None
+    p = Path(path)
+    try:
+        rel = p.resolve().relative_to(runs_root.resolve())
+    except (ValueError, OSError):
+        rel = Path(job) / "assets" / p.name
+    return "/files/" + rel.as_posix()
+
+
+#: shot statuses that still need a human decision before video is paid for
+PENDING_STATUSES = ("planned", "images_ready", "redo")
+
+
+def storyboard_view(runs_root: Path, name: str) -> dict | None:
+    """The run's storyboard (storyboard.build's schema) with servable URLs."""
+    sb = storyboard.load(runs_root / name)
+    if sb is None:
+        return None
+    for shot in sb.get("shots", []):
+        if shot.get("candidates"):
+            shot["candidates"] = [media_url(runs_root, name, c)
+                                  for c in shot["candidates"]]
+        if shot.get("video"):
+            shot["video"] = media_url(runs_root, name, shot["video"])
+    return sb
+
+
+def storyboard_digest(sb: dict) -> dict:
+    """What the run list needs to know about a storyboard without shipping it."""
+    shots = sb.get("shots") or []
+    counts: dict[str, int] = {}
+    for s in shots:
+        counts[s.get("status", "planned")] = counts.get(s.get("status", "planned"), 0) + 1
+    return {
+        "flow": sb.get("flow"),
+        "shots": len(shots),
+        "counts": counts,
+        # pending = still the human's call; ready = has candidates to choose from
+        "pending": sum(1 for s in shots if s.get("status") in PENDING_STATUSES),
+        "ready": sum(1 for s in shots if s.get("candidates")),
+        "awaiting": bool(shots) and not storyboard.all_approved(sb),
+    }
+
+
 def scan_jobs(runs_root: Path) -> list[dict]:
     jobs = []
     for state_path in sorted(runs_root.glob("*/state.json")):
@@ -184,6 +246,16 @@ def scan_jobs(runs_root: Path) -> list[dict]:
             continue
         state = json.loads(state_path.read_text())
         done = state.get("done", {})
+        sb = storyboard.load(workdir)
+        proc = RUNNING.get(workdir.name)
+        # a run this dashboard started and that has since exited is KNOWN to be
+        # stopped — the page must not keep calling it 「生成中」 because its
+        # files were touched a minute ago
+        spawn_exit = proc.poll() if proc is not None else None
+        stamps = [state_path.stat().st_mtime]
+        sb_path = storyboard.path(workdir)
+        if sb_path.exists():
+            stamps.append(sb_path.stat().st_mtime)
         jobs.append({
             "name": workdir.name,
             "spec": state.get("spec"),
@@ -194,9 +266,17 @@ def scan_jobs(runs_root: Path) -> list[dict]:
             "beats": {k: v for k, v in (done.get("beats") or {}).items()
                       if k != "beat_times"},
             "final": done.get("assemble"),
+            "final_url": media_url(runs_root, workdir.name, done.get("assemble")),
+            "music_url": media_url(runs_root, workdir.name, done.get("music")),
             "awaiting_review": (workdir / "review_request.json").exists()
                                and not (workdir / "review.json").exists(),
             "job_file": state.get("job_file"),
+            # the per-shot plan itself is one request away (/api/storyboard);
+            # this is only what the run list needs to sort and label runs
+            "storyboard": storyboard_digest(sb) if sb else None,
+            "updated": round(max(stamps), 1),
+            "running": proc is not None and spawn_exit is None,
+            "spawn_exit": spawn_exit,
         })
     return jobs
 
@@ -211,6 +291,7 @@ def job_detail(runs_root: Path, name: str) -> dict:
         p = workdir / f
         if p.exists():
             out[key] = json.loads(p.read_text())
+    out["storyboard"] = storyboard_view(runs_root, name)
     log = workdir / "run.log"
     if log.exists():
         out["run_log_tail"] = log.read_text()[-3000:]
@@ -278,6 +359,17 @@ def make_handler(runs_root: Path, playground: Playground):
                     })
                 elif self.path.startswith("/api/job/"):
                     self._json(job_detail(root, unquote(self.path[9:])))
+                elif self.path.startswith("/api/storyboard"):
+                    # the agent's per-shot plan for one run: what WILL be
+                    # generated, what already was, and what is waiting on a
+                    # human — the homepage's whole payload
+                    q = parse_qs(urlparse(self.path).query)
+                    name = safe_job((q.get("job") or [""])[0])
+                    if not name or not (root / name).is_dir():
+                        self._json({"error": f"no run named '{name}' under {root}"}, 404)
+                    else:
+                        self._json({"job": name,
+                                    "storyboard": storyboard_view(root, name)})
                 elif self.path.startswith("/files/"):
                     self._serve_file(unquote(self.path[7:]))
                 else:
@@ -314,14 +406,34 @@ def make_handler(runs_root: Path, playground: Playground):
                     cap = validate_cap(req.get("global_cap_usd"))
                     save_limits(root, {"global_cap_usd": cap})
                     self._json({"ok": True, "global_cap_usd": cap})
+                elif self.path == "/api/shot":
+                    # THE edit path for a storyboard, shared with the CLI and
+                    # any driving agent: storyboard.update_shot validates, and
+                    # its message is what the page shows — a rejected edit must
+                    # name the real cause, not "500".
+                    name = safe_job(req.get("job"))
+                    fields = {k: req[k] for k in storyboard.EDITABLE if k in req}
+                    if not fields:
+                        raise BadRequest("nothing to update; editable fields: " +
+                                         ", ".join(sorted(storyboard.EDITABLE)))
+                    try:
+                        index = int(req["index"])
+                    except (KeyError, TypeError, ValueError):
+                        raise BadRequest("index must be a shot's 0-based index")
+                    try:
+                        storyboard.update_shot(root / name, index, fields)
+                    except ValueError as e:
+                        raise BadRequest(str(e)) from e
+                    self._json({"ok": True, "job": name,
+                                "storyboard": storyboard_view(root, name)})
                 elif self.path == "/api/review":
-                    name = re.sub(r"[^\w.-]", "", req["job"])
+                    name = safe_job(req["job"])
                     chosen = {str(k): {"chosen": int(v)}
                               for k, v in req["chosen"].items()}
                     (root / name / "review.json").write_text(json.dumps(chosen, indent=2))
                     self._json({"ok": True})
                 elif self.path == "/api/continue":
-                    name = re.sub(r"[^\w.-]", "", req["job"])
+                    name = safe_job(req["job"])
                     self._json({"result": continue_job(root, name)})
                 else:
                     self._json({"error": "not found"}, 404)

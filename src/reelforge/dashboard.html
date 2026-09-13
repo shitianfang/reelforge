@@ -872,6 +872,105 @@ input[aria-invalid=true]:focus-visible{outline-color:var(--bad)}
 #tip.below::after{bottom:100%;border-bottom-color:#1c1c22}
 #tip.above::after{top:100%;border-top-color:#1c1c22}
 
+/* ---------- 分镜台 ----------
+   The homepage. It answers, with zero clicks: what did the agent plan, what is
+   being generated right now, what did it cost, and what is waiting on me. One
+   card per shot in timeline order; the review controls live ON those cards,
+   because reviewing IS the way you watch the run. */
+.runhead{padding:var(--s5)}
+.runhead-top{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+/* one step under the page title, the same rank the job detail's name carries */
+.runhead-top h1{font-size:20px;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.runsub{flex:1 1 100%;font-size:13px;color:var(--muted);margin-top:var(--s1)}
+.runpick{display:flex;align-items:center;gap:var(--s2);margin-left:auto;flex:none}
+.runpick select{max-width:236px}
+.runhead .facts{margin:var(--s4) 0 0}
+.runhead .steps{margin:var(--s4) 0 0}
+/* the one sentence that says what to do next, with the one button that does it.
+   Amber = the run is stopped and waiting for a person; indigo = it is only
+   telling you where it got to. */
+.callout{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;
+         border-radius:var(--r-lg);padding:var(--s4) var(--s5);margin-top:var(--s4);
+         background:var(--warn-bg);border:1px solid var(--warn-line)}
+.callout.ok{background:var(--accent-weak);border-color:var(--accent-line)}
+.ctext{flex:1 1 300px;min-width:0}
+.ctext .t{font-size:14px;font-weight:600;color:#7c4a06}
+.ctext .d{font-size:13px;line-height:1.7;color:#7c4a06;margin-top:2px}
+.callout.ok .ctext .t{color:var(--ink)}
+.callout.ok .ctext .d{color:var(--fg-2)}
+.callout .btn{margin-left:auto;flex:none}
+
+.sbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));
+        gap:var(--s4);margin-top:var(--s4)}
+.sbcard{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);
+        box-shadow:var(--sh);display:flex;flex-direction:column;overflow:hidden}
+/* a shot that is waiting on a person is outlined in the same amber the callout
+   uses — the banner and the cards it points at speak one colour */
+.sbcard.act{border-color:var(--warn-line)}
+.sb-head{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;
+         padding:var(--s3) var(--s4);border-bottom:1px solid var(--line-2)}
+.sb-no{font-size:14px;font-weight:600}
+.sb-time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sb-time.drop{color:var(--warn)}
+.sb-head .chip{margin-left:auto}
+.sb-body{padding:var(--s3) var(--s4) var(--s4);display:flex;flex-direction:column;
+         gap:var(--s3);flex:1 1 auto}
+/* candidates: the pictures ARE the card, so they sit inline at a size you can
+   judge, and the chosen one carries the page's one selected-state language */
+.sb-cands{display:flex;gap:var(--s2)}
+.cand{flex:1 1 0;min-width:0;padding:0;line-height:0;position:relative;cursor:pointer;
+      background:#fff;border:1px solid var(--line);border-radius:var(--r-md);
+      overflow:hidden;transition:all var(--t)}
+.cand img{width:100%;aspect-ratio:3/4;object-fit:cover}
+.cand:hover{border-color:#c9c9d1;box-shadow:var(--sh)}
+.cand.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,70,229,.26)}
+.cand .tick{position:absolute;top:var(--s1);right:var(--s1);width:18px;height:18px;
+            border-radius:50%;background:var(--accent);color:#fff;font-size:10px;
+            display:none;place-items:center;line-height:1}
+.cand.sel .tick{display:grid}
+/* the finished clip plays in the card, whole — a 9:16 film in a 3:4 frame is
+   letterboxed, never cropped */
+.sb-clip{position:relative;aspect-ratio:3/4;max-height:300px;
+         background:var(--surface-2);border-radius:var(--r-md);overflow:hidden}
+.sb-clip .tilevp video{object-fit:contain;background:var(--surface-2)}
+.sb-wait{display:grid;place-items:center;aspect-ratio:3/4;padding:var(--s4);
+         background:var(--surface);border:1px dashed var(--line);
+         border-radius:var(--r-md);font-size:12px;line-height:1.7;
+         color:var(--muted);text-align:center}
+.sb-field{display:flex;flex-direction:column;gap:var(--s1)}
+/* the label and the one control that edits what it names, on one line */
+.sb-flabel{display:flex;align-items:baseline;gap:var(--s2);
+           font-size:12px;font-weight:600;color:var(--muted)}
+.sb-flabel .linkbtn{margin-left:auto;font-size:12px;font-weight:400}
+/* the prompt is the plan: three lines standing, the whole of it in the tooltip,
+   and the full text in the editor the moment you touch it */
+.sb-ptext{font-size:12px;line-height:1.6;color:var(--fg-2);overflow-wrap:anywhere;
+          display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+          overflow:hidden}
+.sb-ptext.empty{color:var(--ph)}
+.sb-ta{width:100%;min-height:104px;font-size:12px;line-height:1.65;resize:vertical}
+/* a rejected edit says the real cause where the edit was made */
+.sb-err{font-size:12px;line-height:1.55;color:var(--bad);overflow-wrap:anywhere}
+.sb-cost{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;
+         margin-top:auto;padding-top:var(--s3);border-top:1px solid var(--line-2)}
+.sb-acts{display:flex;gap:var(--s2);flex-wrap:wrap;align-items:center}
+/* 下载片段 is an <a> doing a button's job: it may not read as a blue link */
+.sb-acts .btn{font-size:12px;text-decoration:none;color:var(--fg)}
+
+/* the empty state: this tool is driven by a coding agent, so the first screen
+   hands you the sentence to paste into it — not a wall of features */
+.hero{padding:var(--s7) var(--s6)}
+.hero h1{font-size:22px}
+.hero .sub{margin-top:var(--s3);max-width:62ch;font-size:14px;line-height:1.8}
+.copybox{display:flex;align-items:flex-start;gap:var(--s3);flex-wrap:wrap;
+         margin-top:var(--s5);padding:var(--s3) var(--s4);background:var(--surface);
+         border:1px solid var(--line);border-radius:var(--r-md)}
+.copybox code{flex:1 1 300px;min-width:0;font-size:12px;line-height:1.8;
+              color:var(--fg-2);white-space:pre-wrap;overflow-wrap:anywhere;
+              font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.copybox .btn{flex:none}
+.herofoot{font-size:13px;color:var(--muted);margin-top:var(--s5);line-height:1.8}
+
 /* between the phone and the desktop the table used to keep nine 66px columns:
    the two descriptive ones go first, the money and the progress stay */
 @media (max-width:980px){
@@ -915,6 +1014,12 @@ input[aria-invalid=true]:focus-visible{outline-color:var(--bad)}
   .foot-money{flex:1 1 100%;margin-left:0;flex-direction:row;align-items:baseline;
               justify-content:space-between;gap:var(--s3)}
   .composer-foot .btn.primary{flex:1 1 100%;justify-content:center}
+  /* the sentence and the button it belongs to stack instead of squeezing to
+     41px each; the button keeps the fingertip width it needs */
+  .callout{gap:var(--s3)}
+  .callout .btn{margin-left:0;flex:1 1 100%;justify-content:center}
+  .runpick{margin-left:0;flex:1 1 100%}
+  .runpick select{flex:1 1 auto;max-width:none}
 }
 @media (max-width:900px){
   /* the page title keeps its rank without eating a phone's first screen */
@@ -1013,10 +1118,14 @@ input[aria-invalid=true]:focus-visible{outline-color:var(--bad)}
   <div class="nav-in">
     <div class="brand"><span class="mark"></span><span class="name">reelforge</span></div>
     <div class="tabs" id="tabs" role="tablist" aria-label="主导航">
-      <button class="tab on" data-view="create" id="tab-create" role="tab"
-              aria-selected="true" aria-controls="view-create">创作</button>
+      <button class="tab on" data-view="board" id="tab-board" role="tab"
+              aria-selected="true" aria-controls="view-board">分镜台</button>
       <button class="tab" data-view="jobs" id="tab-jobs" role="tab"
-              aria-selected="false" aria-controls="view-jobs" tabindex="-1">任务</button>
+              aria-selected="false" aria-controls="view-jobs"
+              tabindex="-1">历史任务</button>
+      <button class="tab" data-view="create" id="tab-create" role="tab"
+              aria-selected="false" aria-controls="view-create"
+              tabindex="-1">创作</button>
       <button class="tab" data-view="library" id="tab-library" role="tab"
               aria-selected="false" aria-controls="view-library" tabindex="-1">模型库</button>
       <button class="tab" data-view="quota" id="tab-quota" role="tab"
@@ -1047,11 +1156,25 @@ input[aria-invalid=true]:focus-visible{outline-color:var(--bad)}
 
 <main class="wrap" id="main">
 
+  <!-- ============ 分镜台（首页） ============
+       Everything on this view is painted by renderBoard() from /api/summary +
+       /api/storyboard, on the page's existing 3s poll: the run header, the
+       one thing to do next, the shot cards, and the finished film. No click
+       stands between the reader and the state of the run. -->
+  <section class="view" id="view-board" role="tabpanel" aria-labelledby="tab-board">
+    <div id="boardhead"></div>
+    <div id="boardbanner"></div>
+    <div id="boardshots"></div>
+    <div id="boardfoot"></div>
+  </section>
+
   <!-- ============ 创作 ============ -->
-  <section class="view" id="view-create" role="tabpanel" aria-labelledby="tab-create">
+  <section class="view" id="view-create" hidden role="tabpanel"
+           aria-labelledby="tab-create">
     <div class="view-head">
       <h1>创作</h1>
-      <p class="sub">写一句提示词，先花几分钱试；满意了再放大成视频。</p>
+      <p class="sub">手动试玩台：写一句提示词，先花几分钱试；满意了再放大成视频。
+        批量任务的进度在<button class="linkbtn" data-view="board">分镜台</button>。</p>
     </div>
 
     <!-- the discount notice lives here, not in the page-level banner strip:
@@ -1157,8 +1280,9 @@ input[aria-invalid=true]:focus-visible{outline-color:var(--bad)}
   <!-- ============ 任务 ============ -->
   <section class="view" id="view-jobs" hidden role="tabpanel" aria-labelledby="tab-jobs">
     <div class="view-head">
-      <h1>任务</h1>
-      <p class="sub">Claude Code 跑的批量任务，点一行看详情。</p>
+      <h1>历史任务</h1>
+      <p class="sub">Claude Code 跑过的所有批量任务，点一行看详情、成片和运行日志。
+        正在跑的那个在<button class="linkbtn" data-view="board">分镜台</button>。</p>
     </div>
     <div id="jobswrap"></div>
     <div id="jobdetail"></div>
@@ -1250,7 +1374,7 @@ input[aria-invalid=true]:focus-visible{outline-color:var(--bad)}
     <ol>
       <li>在<b>创作</b>里选图片，写一句提示词——不会写就展开<b>套用风格模板</b>，填主体、动作、场景，自动拼成提示词（以英文为主，模型更听英文）。一张草稿几分钱，多生几张挑。</li>
       <li>图满意了就让它动起来：在图片卡片上点<b>用这张生视频</b>，或切到<b>视频</b>后在参数栏点<b>参考图</b>挑一张。先用 480P + 4–5 秒试一版，大约两毛多，满意再换 768P 出正式版。</li>
-      <li>想要带配乐、卡点剪辑的成片：让 Claude Code 跑 <code class="mono">reelforge run</code>，回<b>任务</b>看进度、选关键帧、看成片。</li>
+      <li>想要带配乐、卡点剪辑的成片：让 Claude Code 跑 <code class="mono">reelforge run</code>，回<b>分镜台</b>看它排的每个镜头、挑关键帧、看成片；跑完的老任务在<b>历史任务</b>里。</li>
     </ol>
       </div>
     </details>
@@ -1278,7 +1402,9 @@ input[aria-invalid=true]:focus-visible{outline-color:var(--bad)}
     <dl>
       <dt>文生视频</dt><dd>一句话直接出视频，快，但画面不可控。</dd>
       <dt>从图片生成</dt><dd>先挑一张满意的图再让它动起来，可控，正经做内容走这条；入口是视频参数栏的<b>参考图</b>，或结果图上的<b>用这张生视频</b>。</dd>
+      <dt>分镜</dt><dd>任务把音乐切成几个镜头，每个镜头写好提示词、算好要花多少钱——这张计划表就是<b>分镜台</b>那一页，生成到哪一步都会自己更新。</dd>
       <dt>关键帧</dt><dd>每个镜头的第一帧，你选中的那张决定这个镜头长什么样。</dd>
+      <dt>采用 / 重画</dt><dd>在分镜台每个镜头卡片上：<b>采用</b>=这张定了，可以拿去生成视频；<b>重画</b>=下次运行重新生成这个镜头的关键帧。</dd>
       <dt>drop</dt><dd>音乐情绪最高点，批量任务会把最炸的镜头切在这里。</dd>
     </dl>
       </div>
@@ -1295,7 +1421,7 @@ input[aria-invalid=true]:focus-visible{outline-color:var(--bad)}
 /* ---------------- state ---------------- */
 var S = null;                 // last /api/summary
 var kind = "image";
-var view = "create";
+var view = "board";
 var openJob = null;
 var jobDetail = null;
 var logOpen = false;
@@ -1706,10 +1832,11 @@ async function api(path, body) {
 /* ---------------- navigation ----------------
    A tablist is one tab stop with arrow keys inside it, not four separate stops
    (same for the 图片/视频/音乐 radiogroup). */
-var VIEWS = ["create", "jobs", "library", "quota"];
-var VIEW_TITLE = { create: "创作", jobs: "任务", library: "模型库", quota: "额度" };
+var VIEWS = ["board", "jobs", "create", "library", "quota"];
+var VIEW_TITLE = { board: "分镜台", jobs: "历史任务", create: "创作",
+  library: "模型库", quota: "额度" };
 function setView(v, fromHash) {
-  if (VIEWS.indexOf(v) < 0) v = "create";
+  if (VIEWS.indexOf(v) < 0) v = "board";
   view = v;
   VIEWS.forEach(function (n) { $("view-" + n).hidden = n !== v; });
   var tabs = document.querySelectorAll("#tabs .tab");
@@ -1725,6 +1852,7 @@ function setView(v, fromHash) {
   if (!fromHash && location.hash.slice(1) !== v) location.hash = v;
   if (v === "jobs" && openJob) renderJobDetail();
   if (v === "library") layoutLib();
+  if (v === "board" && S) loadBoard();   // no waiting a poll for the homepage
   if (S) renderBanner();
   window.scrollTo({ top: 0 });
 }
@@ -2261,9 +2389,10 @@ var STEP_ORDER = ["music", "beats", "plan", "keyframes", "review", "videos", "as
 var STEP_LABEL = { music: "配乐", beats: "节拍", plan: "分镜", keyframes: "关键帧",
   review: "选片", videos: "视频", assemble: "成片" };
 function jobStatus(j) {
-  if (j.awaiting_review) return '<span class="chip wait">待选图</span>';
+  if (needsReview(j)) return '<span class="chip wait">待选图</span>';
   if (j.final) return '<span class="chip done">已成片</span>';
-  return '<span class="chip run">进行中</span>';
+  if (isLive(j)) return '<span class="chip run">进行中</span>';
+  return '<span class="chip plain">已停下</span>';
 }
 /* the row says how far it got; the full stepper is the detail's job. A finished
    job does not say 「7/7 成片」 next to a 「已成片」 chip — the chip says that. */
@@ -2273,10 +2402,12 @@ function bar(pct, done) {
     Math.max(0, Math.min(100, pct)).toFixed(1) + '%"></i></span>';
 }
 function progCell(j) {
-  var done = j.steps || [];
-  if (!done.length) return '<span class="prog">' + bar(0) + '<b>0/' +
-    STEP_ORDER.length + '</b><span class="s">未开始</span></span>';
-  var total = Math.max(STEP_ORDER.length, done.length);
+  /* the denominator is THIS run's chain: a direct run has five steps and a
+     storyboard run six, so a finished job never reads 「6/7」 */
+  var keys = stepsOf(j), done = j.steps || [];
+  if (!done.length) return '<span class="prog">' + bar(0) + "<b>0/" +
+    intCount(keys.length) + '</b><span class="s">未开始</span></span>';
+  var total = Math.max(keys.length, done.length);
   var last = done[done.length - 1];
   var tail = j.final ? "" : '<span class="s">' + esc(STEP_LABEL[last] || last) + "</span>";
   return '<span class="prog" tabindex="0" data-tip="已完成：' + esc(done.map(function (k) {
@@ -2320,7 +2451,9 @@ function renderJobs() {
   if (!jobs.length) {
     paint("jobs", "empty", $("jobswrap"),
       '<div class="empty"><p>还没有批量任务。让 Claude Code 跑 ' +
-      '<code class="mono">reelforge run jobs/xxx.yaml</code>，进度会出现在这里。</p></div>');
+      '<code class="mono">reelforge run jobs/xxx.yaml</code>，' +
+      "跑的过程在分镜台，跑完的任务会留在这里。</p>" +
+      '<button class="btn" data-view="board">去分镜台 →</button></div>');
     return;
   }
   var cols = JOB_COLS.filter(function (c) {
@@ -2351,13 +2484,17 @@ function renderJobs() {
     '<h2 class="sec-title">再跑一个批量任务</h2>' +
     '<p class="jobsnote" style="margin-top:8px">批量任务由 Claude Code 创建并运行' +
     '（<code class="mono">reelforge run jobs/xxx.yaml</code>）：' +
-    "它会配乐、分镜、出关键帧，然后停下来让你在这一页选图，最后合成成片。</p>" +
+    "它会配乐、分镜、出关键帧，然后停下来让你选图，最后合成成片。" +
+    "跑的过程和选图都在分镜台。</p>" +
     '<div class="row" style="margin-top:12px">' +
+    '<button class="btn" data-view="board">去分镜台看进度 →</button>' +
     '<button class="btn" data-act="help">看怎么让 Claude Code 跑 →</button>' +
     '<button class="btn" data-view="create">先自己生成一张 →</button></div></div>');
 }
-function stepper(done, awaiting) {
-  var keys = STEP_ORDER.slice();
+/* `order` lets a direct-flow run draw its own five steps: a chain that always
+   shows 关键帧 / 选片 would promise a review gate that flow never has. */
+function stepper(done, awaiting, order) {
+  var keys = (order || STEP_ORDER).slice();
   Object.keys(done).forEach(function (k) { if (keys.indexOf(k) < 0) keys.push(k); });
   var isOk = function (k) { return Object.prototype.hasOwnProperty.call(done, k); };
   return '<div class="steps">' + keys.map(function (k, i) {
@@ -2445,6 +2582,10 @@ async function renderJobDetail() {
   var h = '<div class="card detail"><div class="detail-head">' +
     "<h1>" + esc(openJob) + "</h1>" +
     '<span class="spacer"></span>' +
+    /* the live view of this run — prompts, candidates, per-shot review — is the
+       board; this panel is the archive: timeline, chosen frames, film, log */
+    '<button class="btn tiny" data-act="openboard" data-name="' + esc(openJob) +
+    '">在分镜台打开</button>' +
     '<button class="btn tiny" data-act="closejob">收起</button></div>';
   var row = (S.jobs || []).filter(function (j) { return j.name === openJob; })[0] || {};
   var sp = row.spec || {};
@@ -2553,13 +2694,510 @@ async function submitReview() {
     await renderJobDetail();
   } catch (e) { toast("提交失败", e.message); }
 }
-async function continueJob() {
+/* ONE run-spawning path on the page: /api/continue re-invokes the job file the
+   run recorded in state.json. 提交并继续, 全部采用并继续 and 继续运行 all end
+   here — a second spawner would mean two processes on one run, spending twice. */
+async function continueRun(name) {
+  if (!name) return null;
   try {
-    var r = await api("/api/continue", { job: openJob });
-    toast("继续运行", String(r.result), r.result === "started");
+    var r = await api("/api/continue", { job: name });
+    var started = r.result === "started";
+    toast(started ? "已经继续跑起来了" : "没有启动",
+      started ? "接下来的进度会自己出现在分镜台" : String(r.result), started);
     sig.detail = null;
-    await renderJobDetail();
-  } catch (e) { toast("继续失败", e.message); }
+    await refresh();
+    return r.result;
+  } catch (e) { toast("继续失败", e.message); return null; }
+}
+async function continueJob() {
+  await continueRun(openJob);
+  sig.detail = null;
+  await renderJobDetail();
+}
+
+/* ---------------- 分镜台（首页） ----------------
+   The homepage answers four questions without a click: what did the agent
+   plan, what is being generated right now, what has it cost, and what is
+   waiting on me. The storyboard IS that answer — one card per shot, in
+   timeline order — and the review controls live on those cards, because
+   reviewing is how you watch a run. */
+var boardJob = null;      // the run the reader pinned; null = follow the live one
+var boardSb = null;       // /api/storyboard payload for boardFor
+var boardFor = null;
+var boardSeq = 0;         // out-of-order poll guard (a write always wins)
+var boardBusy = false;    // 全部采用并继续 in flight
+var shotEdit = null;      // {i, k, v}: the one open prompt editor + its draft
+var shotOpt = {};         // i -> optimistic {status, chosen} until the write lands
+var shotErr = {};         // i -> the server's own words for a rejected edit
+var shotBusy = {};        // i -> a write is in flight
+
+var SHOT_STATUS = {
+  planned: { t: "计划中", c: "plain", d: "提示词写好了，关键帧还没生成" },
+  images_ready: { t: "待选图", c: "wait", d: "关键帧好了，挑一张再点采用" },
+  redo: { t: "待重画", c: "wait", d: "提示词改过了，下次运行会重新生成这个镜头的关键帧" },
+  approved: { t: "已采用", c: "run", d: "这个镜头定稿了，等着生成视频" },
+  done: { t: "已完成", c: "done", d: "视频已经生成好了" }
+};
+var FLOW_LABEL = { "image-first": "先出关键帧，挑中了再生成视频",
+  direct: "文生视频，不出关键帧" };
+/* a storyboard run keeps its review gate on the cards, not in state.json, so
+   its chain is the six steps the run actually records */
+var SB_STEPS = ["music", "beats", "plan", "keyframes", "videos", "assemble"];
+var DIRECT_STEPS = ["music", "beats", "plan", "videos", "assemble"];
+var AGENT_PROMPT = "用 reelforge 帮我做一条 30 秒的竖屏卡点短视频：" +
+  "主角是一只琥珀眼睛的黑猫，赛博霓虹街头风格，预算 $2。" +
+  "先写好 jobs/ 下的任务文件再跑 reelforge run，" +
+  "关键帧出来后停下来，等我在分镜台挑图。";
+
+function jobsList() { return (S && S.jobs) || []; }
+/* 「等你定」 means: there are candidates on the table AND shots still undecided.
+   A run whose keyframes have not been generated yet is not waiting on a person. */
+function needsReview(j) {
+  var d = j && j.storyboard;
+  return !!(j && (j.awaiting_review || (d && d.pending > 0 && d.ready > 0)));
+}
+function isFresh(j) {   // something moved in this run in the last 90 seconds
+  return !!(j && j.updated && Date.now() / 1000 - j.updated < 90);
+}
+/* RUNNING only knows the processes THIS page started; a run launched from the
+   terminal is read from its files moving instead. A run this page started and
+   watched exit is known to be stopped, however fresh its files look. */
+function isLive(j) {
+  if (!j) return false;
+  if (j.running) return true;
+  if (j.spawn_exit != null) return false;
+  return isFresh(j) && !j.final && !needsReview(j);
+}
+function focusJob() {
+  var list = jobsList();
+  if (!list.length) return null;
+  if (boardJob) {
+    var hit = list.filter(function (j) { return j.name === boardJob; })[0];
+    if (hit) return hit;
+  }
+  var score = function (j) {
+    return (isLive(j) ? 8 : 0) + (needsReview(j) ? 4 : 0) +
+      (j.storyboard ? 2 : 0) + (j.final ? 0 : 1);
+  };
+  return list.slice().sort(function (a, b) {
+    return score(b) - score(a) || (b.updated || 0) - (a.updated || 0);
+  })[0];
+}
+function sbShots() { return (boardSb && boardSb.shots) || []; }
+function sbShot(i) {
+  return sbShots().filter(function (s) { return s.index === i; })[0];
+}
+/* what the reader sees right now = the file, with the click they just made
+   laid over it until the write comes back */
+function shotView(s) {
+  var o = shotOpt[s.index];
+  if (!o) return s;
+  var m = {}, k;
+  for (k in s) m[k] = s[k];
+  for (k in o) m[k] = o[k];
+  return m;
+}
+function shotDecided(v) { return v.status === "approved" || v.status === "done"; }
+function pendingShots() {
+  return sbShots().filter(function (s) { return !shotDecided(shotView(s)); });
+}
+function videoLeftUsd() {
+  return sbShots().reduce(function (a, s) {
+    return a + (s.video ? 0 : (+s.est_video_usd || 0));
+  }, 0);
+}
+async function loadBoard() {
+  if (view !== "board" || !S) return;
+  var j = focusJob();
+  if (!j) { boardSb = null; boardFor = null; renderBoard(); return; }
+  if (boardFor !== j.name) { boardSb = null; boardFor = j.name; }
+  if (j.storyboard) {
+    var seq = ++boardSeq;
+    try {
+      var d = await api("/api/storyboard?job=" + encodeURIComponent(j.name));
+      if (seq !== boardSeq) return;          // a newer answer already landed
+      boardSb = d.storyboard; boardFor = d.job;
+    } catch (e) { /* keep the last good board; the 3s poll retries */ }
+  } else boardSb = null;
+  renderBoard();
+}
+function renderBoard() {
+  var j = focusJob();
+  if (!j) { renderHero(); return; }
+  renderRunHead(j);
+  renderBoardCallout(j);
+  renderShots(j);
+  renderBoardFoot(j);
+}
+/* no runs yet: this tool is driven by a coding agent, so the first screen is
+   the sentence to paste into it — not a wall of features */
+function renderHero() {
+  paint("boardhead", "hero", $("boardhead"),
+    '<div class="card pad hero"><h1>这块工作台由你的编程代理驱动</h1>' +
+    '<p class="sub">批量任务由 Claude Code / Codex 在终端里跑。跑起来之后，' +
+    "它的分镜计划、正在生成的画面、每一步要花多少钱，都会自动出现在这一页，" +
+    "不用点任何按钮。</p>" +
+    '<div class="copybox"><code>' + esc(AGENT_PROMPT) + "</code>" +
+    '<button class="btn" data-act="copyprompt">复制这段话</button></div>' +
+    '<p class="herofoot">想先自己试试手感，' +
+    '<button class="linkbtn" data-view="create">去创作生成一张草稿图</button>；' +
+    '第一次用就<button class="linkbtn" data-act="help">看新手指南</button>。</p></div>');
+  paint("boardbanner", "", $("boardbanner"), "");
+  paint("boardshots", "", $("boardshots"), "");
+  paint("boardfoot", "", $("boardfoot"), "");
+}
+function flowOf(j) {
+  return (j.spec || {}).flow || (j.storyboard && j.storyboard.flow) || "image-first";
+}
+function stepsOf(j) {
+  if (flowOf(j) === "direct") return DIRECT_STEPS;
+  return j && j.storyboard ? SB_STEPS : STEP_ORDER;
+}
+function stepNow(j) {
+  if (j.final) return "已完成";
+  if (needsReview(j)) return "等你选关键帧";
+  var done = j.steps || [], keys = stepsOf(j);
+  for (var i = 0; i < keys.length; i++)
+    if (done.indexOf(keys[i]) < 0) return STEP_LABEL[keys[i]] || keys[i];
+  return "合成中";
+}
+function runChip(j) {
+  if (needsReview(j)) return '<span class="chip wait">等你定</span>';
+  if (isLive(j)) return '<span class="chip run">生成中</span>';
+  if (j.final) return '<span class="chip done">已成片</span>';
+  return '<span class="chip plain">已停下</span>';
+}
+function runPicker() {
+  var list = jobsList();
+  if (list.length < 2) return "";
+  return '<span class="runpick"><label class="lbl" for="runsel">看哪个任务</label>' +
+    '<select id="runsel"><option value="">自动（跟最新的那个）</option>' +
+    list.map(function (x) {
+      return '<option value="' + esc(x.name) + '"' +
+        (boardJob === x.name ? " selected" : "") + ">" + esc(x.name) +
+        (needsReview(x) ? "（等你定）" : x.final ? "（已成片）" : "") + "</option>";
+    }).join("") + "</select></span>";
+}
+function renderRunHead(j) {
+  var u = usage(), sp = j.spec || {};
+  var shots = (j.storyboard && j.storyboard.shots) || (j.plan || []).length;
+  var facts = [["当前步骤", esc(stepNow(j))]];
+  if (shots) facts.push(["镜头", intCount(shots) + " 个"]);
+  facts.push(["这个任务已花", money(j.cost_usd) +
+    (sp.budget_usd != null ? " / 预算 " + money(sp.budget_usd) : "")]);
+  facts.push(["本机额度", money(u.dSpent) + " / 上限 " + money(u.dCap)]);
+  facts.push(["fal 余额", S.balance == null ? "不可用" : money(S.balance)]);
+  /* a 继续运行 that died on this machine is the most useful thing the header
+     can say — with where the reason is written down */
+  var died = !j.final && j.spawn_exit != null && j.spawn_exit !== 0;
+  var sub = died
+    ? "上一次「继续运行」很快就退出了（退出码 " + intCount(j.spawn_exit) +
+      "），原因写在历史任务里的运行日志中。"
+    : needsReview(j) ? "任务停在选图这一步，等你决定。"
+      : isLive(j) ? "正在生成，这一页每 3 秒自动刷新，新画面会自己出现。"
+        : j.final ? "这条片子已经合成好了，成片在这一页最下面。"
+          : "任务现在没有在跑。";
+  var done = {};
+  (j.steps || []).forEach(function (k) { done[k] = 1; });
+  var s = [j.name, runChip(j), stepNow(j), j.cost_usd, sp.budget_usd, S.balance,
+    u.dSpent, u.dCap, shots, boardJob, j.spawn_exit, jobsList().map(function (x) {
+      return x.name + (needsReview(x) ? "!" : "") + (x.final ? "." : "");
+    }).join(",")].join("|");
+  paint("boardhead", s, $("boardhead"),
+    '<div class="card runhead"><div class="runhead-top"><h1>' + esc(j.name) + "</h1>" +
+    runChip(j) + '<span class="chip plain">' + esc(FLOW_LABEL[flowOf(j)] ||
+      flowOf(j)) + "</span>" + runPicker() +
+    '<p class="runsub">' + esc(sub) + "</p></div>" +
+    '<div class="facts">' + facts.map(function (f) {
+      return "<span>" + esc(f[0]) + "<b>" + f[1] + "</b></span>";
+    }).join("") + "</div>" +
+    stepper(done, needsReview(j), stepsOf(j)) + "</div>");
+}
+/* ONE primary button on this screen, and it is whatever the run needs next */
+function renderBoardCallout(j) {
+  if (!j) return;
+  var h = "", left = money(videoLeftUsd());
+  var pend = pendingShots();
+  /* a shot marked 重画, or one whose keyframes never arrived, cannot be
+     采用 — the run has to generate pictures for it first. That regeneration
+     IS the next step, so the one primary button becomes it. */
+  var regen = pend.filter(function (s) {
+    return shotView(s).status === "redo" || !(s.candidates || []).length;
+  });
+  if (needsReview(j) && boardSb && regen.length) {
+    var nos = regen.map(function (s) { return shotNo(s.index); }).join("、");
+    h = '<div class="callout"><div class="ctext">' +
+      '<div class="t">镜头 ' + esc(nos) + " 要先重新出图</div>" +
+      '<div class="d">这些镜头标成了待重画，或者关键帧还没生成。' +
+      "点右边让任务接着跑，它会按新的提示词重画这几个镜头的关键帧（只花图片的钱），" +
+      "回来再一起采用。</div></div>" +
+      '<button class="btn primary" data-act="boardcontinue">继续运行，重画 ' +
+      intCount(regen.length) + " 个镜头</button></div>";
+  } else if (needsReview(j) && boardSb) {
+    h = '<div class="callout"><div class="ctext">' +
+      '<div class="t">还有 ' + intCount(pend.length) + " 个镜头等你定</div>" +
+      '<div class="d">在下面每个镜头里挑一张关键帧，点「采用」；' +
+      "不满意就改提示词或点「重画」。全部采用后按右边的按钮，" +
+      "会接着生成视频，预计再花 " + left + "。</div></div>" +
+      '<button class="btn primary" data-act="approveall"' +
+      (boardBusy ? ' aria-disabled="true" data-tip="正在提交，稍等一下"' : "") +
+      ">" + (boardBusy ? '<span class="spin"></span>提交中' : "全部采用并继续") +
+      "</button></div>";
+  } else if (needsReview(j)) {
+    /* an old run from before storyboard.json: its picker lives in the detail */
+    h = '<div class="callout"><div class="ctext">' +
+      '<div class="t">这个任务停在选图这一步</div>' +
+      '<div class="d">它是分镜文件出现之前跑的，选图在「历史任务」里这个任务的详情中。</div>' +
+      "</div><button class=\"btn primary\" data-act=\"openjob\" data-name=\"" +
+      esc(j.name) + '">去历史任务选图</button></div>';
+  } else if (boardSb && !j.final && !isLive(j) && sbShots().length) {
+    h = '<div class="callout ok"><div class="ctext">' +
+      '<div class="t">关键帧都定好了</div>' +
+      '<div class="d">还差生成视频和合成成片，预计再花 ' + left +
+      "。点右边接着跑，或者让 Claude Code 再跑一次同一个任务文件。</div></div>" +
+      '<button class="btn primary" data-act="boardcontinue">继续运行</button></div>';
+  }
+  paint("boardbanner", h, $("boardbanner"), h);
+}
+function costLine(s) {
+  var parts = [];
+  if (s.est_video_usd != null) parts.push("视频 " + money(s.est_video_usd));
+  if (s.est_images_usd != null) parts.push("关键帧 " + money(s.est_images_usd));
+  var total = (+s.est_video_usd || 0) + (+s.est_images_usd || 0);
+  return "这个镜头预计 " + money(total) +
+    (parts.length > 1 ? "（" + parts.join(" + ") + "）" : "");
+}
+function shotMedia(s, v) {
+  if (s.video)
+    return '<div class="sb-clip">' + videoPlayer(s.video, true) + "</div>";
+  if ((s.candidates || []).length)
+    return '<div class="sb-cands">' + s.candidates.map(function (c, i) {
+      var on = v.chosen === i;
+      return '<button class="cand' + (on ? " sel" : "") + '" data-act="shotpick"' +
+        ' data-i="' + s.index + '" data-c="' + i + '" aria-pressed="' +
+        (on ? "true" : "false") + '" data-tip="' + esc("候选 " + (i + 1) +
+          (on ? "：这个镜头现在用它" : "：点一下改用这张")) + '">' +
+        '<img src="' + esc(c) + '" loading="lazy" alt="' +
+        esc("镜头 " + shotNo(s.index) + " 候选 " + (i + 1)) + '">' +
+        '<span class="tick">✓</span></button>';
+    }).join("") + "</div>";
+  if ("candidates" in s)
+    return '<div class="sb-wait">' + (v.status === "redo"
+      ? "下次运行会按新提示词重画这个镜头的关键帧"
+      : "关键帧还没生成；任务跑到这一步时会自动出现在这里") + "</div>";
+  return '<div class="sb-wait">这个任务是文生视频：没有关键帧可挑，' +
+    "生成好的片段会直接出现在这里</div>";
+}
+function fieldBlock(s, v, key, label) {
+  if (!(key in s)) return "";
+  var editing = shotEdit && shotEdit.i === s.index && shotEdit.k === key;
+  if (editing)
+    return '<div class="sb-field"><span class="sb-flabel">' + esc(label) + "</span>" +
+      '<textarea class="sb-ta" data-act="shotdraft" spellcheck="false" aria-label="' +
+      esc("编辑镜头 " + shotNo(s.index) + " 的" + label) + '">' +
+      esc(shotEdit.v) + "</textarea>" +
+      '<div class="sb-acts"><button class="btn tiny" data-act="shotsave">保存</button>' +
+      '<button class="linkbtn" data-act="shotcancel">取消</button></div></div>';
+  var text = String(v[key] == null ? "" : v[key]);
+  return '<div class="sb-field"><span class="sb-flabel">' + esc(label) +
+    '<button class="linkbtn" data-act="shotedit" data-i="' + s.index +
+    '" data-k="' + esc(key) + '">编辑</button></span>' +
+    '<p class="sb-ptext' + (text ? "" : " empty") + '"' +
+    (text.length > 56 ? ' tabindex="0" data-tip="' + esc(text) + '"' : "") + ">" +
+    esc(text || "（空）") + "</p></div>";
+}
+function shotActs(s, v) {
+  if (shotBusy[s.index])
+    return '<div class="sb-acts"><span class="small"><span class="spin"' +
+      ' style="display:inline-block;vertical-align:-3px"></span> 正在保存…</span></div>';
+  var acts = [];
+  if (s.video)
+    acts.push('<a class="btn tiny" href="' + esc(s.video) + '" download>下载片段</a>');
+  if ("candidates" in s && v.status !== "done") {
+    if (v.status === "approved")
+      acts.push('<button class="btn tiny" data-act="shotunapprove" data-i="' +
+        s.index + '" data-tip="退回待选图，可以重新挑一张或改提示词">取消采用</button>');
+    else if ((s.candidates || []).length) {
+      var noPick = v.chosen == null;
+      acts.push('<button class="btn tiny" data-act="shotapprove" data-i="' + s.index +
+        '"' + (noPick ? ' aria-disabled="true" data-tip="先在上面挑一张关键帧，' +
+          '选中的那张决定这个镜头长什么样"' : ' data-tip="定下这个镜头，用选中的那张关键帧生成视频"') +
+        ">采用</button>");
+      acts.push('<button class="btn tiny" data-act="shotredo" data-i="' + s.index +
+        '" data-tip="标成待重画：下次运行会重新生成这个镜头的关键帧">重画</button>');
+    }
+  }
+  return acts.length ? '<div class="sb-acts">' + acts.join("") + "</div>" : "";
+}
+function shotCard(s) {
+  var v = shotView(s);
+  var st = SHOT_STATUS[v.status] || { t: v.status, c: "plain", d: "" };
+  var waiting = !shotDecided(v) && (s.candidates || []).length > 0;
+  return '<div class="sbcard' + (waiting ? " act" : "") + '">' +
+    '<div class="sb-head"><span class="sb-no">镜头 ' + shotNo(s.index) + "</span>" +
+    '<span class="sb-time' + (s.on_drop ? " drop" : "") + '">' +
+    (+s.start).toFixed(1) + "–" + (+s.end).toFixed(1) + "s" +
+    (s.on_drop ? " · drop" : "") + "</span>" +
+    '<span class="chip ' + st.c + '" tabindex="0" data-tip="' +
+    esc(st.t + "：" + st.d) + '">' + esc(st.t) + "</span></div>" +
+    '<div class="sb-body">' + shotMedia(s, v) +
+    fieldBlock(s, v, "image_prompt", "画面提示词") +
+    fieldBlock(s, v, "video_prompt", "运镜提示词") +
+    (String(v.notes || "") ? fieldBlock(s, v, "notes", "备注") : "") +
+    (shotErr[s.index] ? '<p class="sb-err">' + esc(shotErr[s.index]) + "</p>" : "") +
+    '<div class="sb-cost">' + esc(costLine(s)) + "</div>" +
+    shotActs(s, v) + "</div></div>";
+}
+function renderShots(j) {
+  if (!j) return;                      // the run vanished under a repaint
+  if (!boardSb) {
+    /* an older dash process serves this page but has no /api/storyboard: say
+       that, instead of claiming the run has no plan */
+    if (j.updated == null) {
+      paint("boardshots", "oldserver", $("boardshots"),
+        '<div class="card pad"><h2 class="sec-title">本地 dash 服务是旧版本</h2>' +
+        '<p class="small" style="margin-top:8px">页面已经更新了，但正在跑的 dash ' +
+        "进程还是旧的，读不到分镜。在终端里 Ctrl+C 停掉它，再 " +
+        '<code class="mono">uv run reelforge dash</code> 起一次就好。</p></div>');
+      return;
+    }
+    paint("boardshots", "nosb|" + j.name, $("boardshots"),
+      '<div class="card pad"><h2 class="sec-title">这个任务还没有分镜文件</h2>' +
+      '<p class="small" style="margin-top:8px">分镜（storyboard.json）在任务排完镜头' +
+      "之后才会写出来；它也可能是这个文件出现之前跑的老任务。" +
+      '成片、关键帧和运行日志都在<button class="linkbtn" data-act="openjob"' +
+      ' data-name="' + esc(j.name) + '">历史任务的详情</button>里。</p></div>');
+    return;
+  }
+  var shots = sbShots().slice().sort(function (a, b) { return a.index - b.index; });
+  var s = JSON.stringify(shots.map(function (x) {
+    var v = shotView(x);
+    return [x.index, v.status, v.chosen, (x.candidates || []).length, x.video || "",
+      v.image_prompt || "", v.video_prompt || "", v.notes || "",
+      !!shotBusy[x.index], shotErr[x.index] || ""];
+  })) + "|" + (shotEdit ? shotEdit.i + ":" + shotEdit.k : "") + "|" + boardFor;
+  if (paint("boardshots", s, $("boardshots"),
+      '<div class="sbgrid">' + shots.map(shotCard).join("") + "</div>")) {
+    initPlayers();
+    /* a repaint under an open editor keeps the draft and the caret */
+    if (shotEdit) {
+      var ta = $("boardshots").querySelector(".sb-ta");
+      if (ta && document.activeElement !== ta) {
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      }
+    }
+  }
+}
+function renderBoardFoot(j) {
+  if (!j.final_url) { paint("boardfoot", "", $("boardfoot"), ""); return; }
+  var shots = sbShots();
+  var poster = "";
+  for (var i = 0; i < shots.length && !poster; i++) {
+    var c = shots[i].candidates || [];
+    if (shots[i].chosen != null && c[shots[i].chosen]) poster = c[shots[i].chosen];
+  }
+  var h = '<div class="card pad" style="margin-top:16px"><div class="mediarow"' +
+    ' style="margin-top:0"><div><div class="subhead" style="margin-top:0">成片</div>' +
+    '<div class="player">' + videoPlayer(j.final_url, false, poster) + "</div>" +
+    '<p class="m-note">' + (shots.length ? "共 " + intCount(shots.length) +
+      " 个镜头，按节拍拼成。" : "按节拍剪好的成片。") + "</p></div>" +
+    (j.music_url ? '<div><div class="subhead">配乐</div>' +
+      audioPlayer(j.music_url) +
+      '<p class="m-note">卡点用的就是这段音乐。</p></div>' : "") +
+    "</div></div>";
+  if (paint("boardfoot", j.name + "|" + j.final_url + "|" + poster,
+      $("boardfoot"), h)) initPlayers();
+}
+/* every board write goes through here: optimistic paint, one POST, and on
+   rejection the server's own sentence shown on the card that caused it */
+async function shotAct(index, fields, optimistic, ok, restore) {
+  var j = focusJob();
+  if (!j || shotBusy[index]) return;
+  shotBusy[index] = true;
+  if (optimistic) shotOpt[index] = optimistic;
+  delete shotErr[index];
+  renderShots(j);                      // the chip flips in this turn, not in 3s
+  try {
+    var body = { job: j.name, index: index };
+    for (var k in fields) body[k] = fields[k];
+    var d = await api("/api/shot", body);
+    boardSeq++;                        // newer than any /api/storyboard in flight
+    if (d && d.storyboard) { boardSb = d.storyboard; boardFor = d.job || j.name; }
+    delete shotOpt[index];
+    if (ok) {
+      var after = sbShot(index) || {};
+      toast(ok, after.status === "redo"
+        ? "这个镜头标成了待重画：下次运行会重新生成它的关键帧" : "", true);
+    }
+  } catch (e) {
+    delete shotOpt[index];
+    /* the contract's own words, verbatim — plus the remedy the page already
+       gives for this exact lint everywhere else */
+    shotErr[index] = e.message + (/banned words/.test(e.message)
+      ? "（把这些虚词换成具体的光线、颜色、镜头）" : "");
+    if (restore) shotEdit = restore;   // a rejected edit keeps what was typed
+    toast("这一步没保存", e.message);
+  } finally {
+    delete shotBusy[index];
+    renderBoard();
+  }
+}
+async function approveAllContinue() {
+  var j = focusJob();
+  if (!j || boardBusy) return;
+  var todo = pendingShots();
+  var blocked = todo.filter(function (s) {
+    return shotView(s).status === "redo" || !(s.candidates || []).length;
+  });
+  if (blocked.length) {
+    toast("还不能全部采用", "镜头 " +
+      blocked.map(function (s) { return shotNo(s.index); }).join("、") +
+      " 要先重新出图：点「继续运行」让任务把它们的关键帧生成出来");
+    return;
+  }
+  boardBusy = true;
+  renderBoardCallout(j);
+  try {
+    for (var i = 0; i < todo.length; i++) {
+      var s = todo[i], v = shotView(s);
+      var chosen = v.chosen == null ? 0 : v.chosen;
+      shotOpt[s.index] = { status: "approved", chosen: chosen };
+      renderShots(j);
+      await api("/api/shot",
+        { job: j.name, index: s.index, status: "approved", chosen: chosen });
+      delete shotOpt[s.index];
+    }
+    boardSeq++;
+    await continueRun(j.name);
+  } catch (e) {
+    shotOpt = {};
+    toast("没能全部采用", e.message);   // the contract's own message, verbatim
+  } finally {
+    boardBusy = false;
+    await loadBoard();
+  }
+}
+function copyText(text, btn) {
+  var label = btn.textContent;
+  var done = function () {
+    btn.textContent = "已复制";
+    setTimeout(function () { btn.textContent = label; }, 1800);
+  };
+  var manual = function () {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();
+    var okc = false;
+    try { okc = document.execCommand("copy"); } catch (e) { okc = false; }
+    ta.remove();
+    if (okc) done(); else toast("复制失败", "手动选中那段话复制就行");
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(text).then(done, manual);
+  else manual();
 }
 
 /* ---------------- library ---------------- */
@@ -2956,6 +3594,9 @@ async function refresh() {
         "所以这里是空的，而不是「你没生成过」。顶部那条提示里有重新连接。</p></div>");
       paint("jobs", "down", $("jobswrap"),
         '<div class="empty"><p>读取失败：连不上本地 dash 服务。</p></div>');
+      paint("boardhead", "down", $("boardhead"),
+        '<div class="empty"><p>读取失败：连不上本地 dash 服务，所以这一页是空的，' +
+        "而不是「没有任务在跑」。顶部那条提示里有重新连接。</p></div>");
     }
     return;
   }
@@ -3000,6 +3641,9 @@ async function refresh() {
   renderLibrary();
   renderQuota();
   estimate();
+  /* the homepage rides the same 3s poll: new candidates, new clips and new
+     statuses appear in place, and nothing on it is behind a click */
+  await loadBoard();
 }
 /* The dropdown is read by a beginner, so it says the Chinese name and nothing
    else; the slug the CLI and the docs use is taught once, under the field. */
@@ -3028,6 +3672,12 @@ document.addEventListener("click", function (ev) {
   if (!a) return;
   var act = a.dataset.act;
   if (act === "ext") return;   // outbound fal.ai link: let the browser handle it
+  /* a blocked control keeps focus and a tooltip (never `disabled`), so a click
+     or a tap on it answers with the reason instead of doing nothing */
+  if (a.getAttribute("aria-disabled") === "true") {
+    if (a.getAttribute("data-tip")) toast("现在还不能这样做", a.getAttribute("data-tip"));
+    return;
+  }
   if (act === "src") useAsSource(a.dataset.file);
   else if (act === "srcpick") { srcOpen = !srcOpen; renderSource(); }
   else if (act === "srcuse") pickSource(a.dataset.file);
@@ -3048,6 +3698,46 @@ document.addEventListener("click", function (ev) {
   else if (act === "logfold") logOpen = !logOpen;
   else if (act === "review") submitReview();
   else if (act === "continue") continueJob();
+  /* ---- 分镜台 ---- */
+  else if (act === "shotpick")
+    shotAct(+a.dataset.i, { chosen: +a.dataset.c }, { chosen: +a.dataset.c });
+  else if (act === "shotapprove")
+    shotAct(+a.dataset.i, { status: "approved" }, { status: "approved" });
+  else if (act === "shotredo")
+    shotAct(+a.dataset.i, { status: "redo" }, { status: "redo" });
+  else if (act === "shotunapprove")
+    shotAct(+a.dataset.i, { status: "images_ready" }, { status: "images_ready" });
+  else if (act === "shotedit") {
+    var si = +a.dataset.i, sk = a.dataset.k, ss = sbShot(si);
+    if (ss) {
+      shotEdit = { i: si, k: sk, v: String(ss[sk] == null ? "" : ss[sk]) };
+      renderShots(focusJob());
+    }
+  }
+  else if (act === "shotcancel") { shotEdit = null; renderShots(focusJob()); }
+  else if (act === "shotsave") {
+    var e0 = shotEdit;
+    if (!e0) return;
+    var ta0 = $("boardshots").querySelector(".sb-ta");
+    if (ta0) e0.v = ta0.value;
+    shotEdit = null;
+    var f0 = {};
+    f0[e0.k] = e0.v;
+    shotAct(e0.i, f0, null, "提示词已保存", e0);
+  }
+  else if (act === "approveall") approveAllContinue();
+  else if (act === "boardcontinue") {
+    var fj = focusJob();
+    if (fj) continueRun(fj.name);
+  }
+  else if (act === "copyprompt") copyText(AGENT_PROMPT, a);
+  /* 分镜台 → 历史任务, with that run's detail already open */
+  else if (act === "openjob") {
+    setView("jobs");
+    if (openJob !== a.dataset.name) toggleJob(a.dataset.name);
+  }
+  /* 历史任务 → 分镜台, pinned to that run */
+  else if (act === "openboard") { boardJob = a.dataset.name; setView("board"); }
   /* one card open at a time: the detail is a full-width panel under its row,
      and two of them would fight over where the row ends */
   else if (act === "model") {
@@ -3085,6 +3775,19 @@ document.addEventListener("click", function (ev) {
   else if (act === "topup") window.open(a.dataset.url, "_blank", "noopener");
   else if (act === "help") openDrawer(true);
   else if (act === "retry") refresh();
+});
+/* the open prompt editor keeps its draft across the 3s repaint: the textarea is
+   re-rendered from here, not from the file */
+document.addEventListener("input", function (ev) {
+  var ta = ev.target.closest ? ev.target.closest(".sb-ta") : null;
+  if (ta && shotEdit) shotEdit.v = ta.value;
+});
+/* the run picker: an explicit choice pins the board, 自动 follows the live run */
+document.addEventListener("change", function (ev) {
+  if (!ev.target.closest || !ev.target.closest("#runsel")) return;
+  boardJob = ev.target.value || null;
+  sig.boardhead = null;
+  loadBoard();
 });
 /* the job row is a button: a pointer opens it, and so does the keyboard */
 document.addEventListener("keydown", function (ev) {
@@ -3224,12 +3927,12 @@ window.addEventListener("resize", function () {
 });
 /* the tab is in the URL, so the back button works and a link can point at one */
 window.addEventListener("hashchange", function () {
-  setView(location.hash.slice(1) || "create", true);
+  setView(location.hash.slice(1) || "board", true);
 });
 
 /* ---------------- boot ---------------- */
 setKind("image");
-setView(location.hash.slice(1) || "create", true);
+setView(location.hash.slice(1) || "board", true);
 refresh();
 setInterval(refresh, 3000);
 setInterval(function () { if (openJob && view === "jobs") renderJobDetail(); }, 5000);
