@@ -1,0 +1,28 @@
+# Showcase piece: cinematic rain-noir beatcut (storyboard-first flow).
+# Premise: a woman in a scarlet coat moves through a rain-black city as the
+# beat builds — hook in motion, widest shot on the drop, release after.
+name: noir-rain
+style: contrast-noir
+flow: image-first
+image_quality: fast
+resolution: 768P
+aspect: "9:16"
+budget_usd: 2.0
+n_variants: 3
+music:
+  prompt: "cinematic dark electronic trailer score, pounding drums, rising tension, one massive drop, 128 bpm"
+  duration_s: 30
+shots:
+  # subject anchor stays verbatim across shots; only size/angle/motion change
+  - subject: "a woman in a flowing scarlet trench coat"
+    action: "striding through sheets of rain toward the camera, coat trailing"
+    scene: "an empty midnight street under a single hard spotlight, teal mist"
+  - subject: "a woman in a flowing scarlet trench coat"
+    action: "stopping as a gust flares the coat wide open, arms lifting"
+    scene: "a vast rain-flooded plaza mirroring one column of light, seen from far away"
+  - subject: "a woman in a flowing scarlet trench coat"
+    action: "her scarlet heel striking a puddle in slow motion, splash crowning"
+    scene: "black asphalt turned to a mirror, lit droplets frozen mid-air"
+  - subject: "a woman in a flowing scarlet trench coat"
+    action: "walking away into the dark, silhouette shrinking under a tilted umbrella"
+    scene: "the spotlight fading behind her, rain easing over a wide empty street"

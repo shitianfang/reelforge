@@ -17,7 +17,8 @@ BANNED = ["soft lighting", "moody", "nice", "beautiful", "cinematic vibes"]
 
 STYLES = {
     "contrast-noir": {
-        "light": "single hard top-down spotlight, high-contrast noir shadows, deep black background",
+        # "hard top-down spotlight" read as headwear: models kept adding hard hats
+        "light": "a single harsh spotlight from directly above, high-contrast noir shadows, deep black background",
         "color": "warm orange subject against a cool teal background",
         "lens": "35mm lens, shallow depth of field",
     },

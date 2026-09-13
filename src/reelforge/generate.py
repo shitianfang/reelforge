@@ -105,8 +105,9 @@ def gen_music(client, prompt: str, seconds: int, dest: Path, lyrics: str = "",
     if m["family"] == "el_music":
         payload = {"prompt": prompt, "music_length_ms": seconds * 1000,
                    "force_instrumental": not lyrics}
-    else:  # minimax music-3
-        payload = {"prompt": prompt, "lyrics": lyrics, "duration": seconds}
+    else:  # minimax music-3: lyrics must not be empty; section tags mark instrumentals
+        payload = {"prompt": prompt, "lyrics": lyrics or "[instrumental]",
+                   "duration": seconds}
     out = client.run(m["endpoint"], payload)
     client.download(_first_url(out, "audio", "audios"), dest)
     return dest
