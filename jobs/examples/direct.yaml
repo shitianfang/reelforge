@@ -1,5 +1,5 @@
-# Direct flow: text-to-video, no keyframe/review stage — fastest and cheapest
-# way to explore a concept end to end.
+# Direct flow: one command straight to video (text-to-video, no keyframes and
+# no approval gate) — the fastest, cheapest way to see a concept end to end.
 name: pov-vlog-direct
 style: pov-vlog
 flow: direct

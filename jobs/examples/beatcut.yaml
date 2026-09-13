@@ -1,3 +1,6 @@
+# Storyboard-first flow (the default): keyframes are drafted and approved shot
+# by shot before any video is paid for; `--auto` runs it straight through.
+#
 # High-contrast beat-synced montage: every cut lands on a detected beat,
 # the drop shot gets the action peak.
 name: neon-cat-demo

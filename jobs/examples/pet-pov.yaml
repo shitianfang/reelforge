@@ -1,3 +1,6 @@
+# Storyboard-first flow (the default): plan → cheap keyframe drafts → review,
+# edit and redo each shot in runs/<name>/storyboard.json → approve → paid video.
+#
 # A pet's-eye action camera reel. The camera is never called "POV" in prompts;
 # the recipe states where it is physically mounted (that's the trick that works).
 name: pet-pov-demo

@@ -1,25 +1,33 @@
-"""Manifest-driven pipeline runner: resumable, budget-capped, review-gated.
+"""Manifest-driven pipeline runner: resumable, budget-capped, storyboard-gated.
 
 Flows:
-- image-first: music → beats → plan → keyframes → review → videos → assemble.
-  The review gate is where "approve the pictures before paying for video"
-  happens (exit code 3 = awaiting review.json).
-- direct: music → beats → plan → videos (text-to-video) → assemble.
-State survives interruption; re-running continues where it left off.
+- image-first: music → beats → plan → storyboard → keyframes → approval gate →
+  videos → assemble. The gate is where "approve the pictures before paying for
+  video" happens (exit code 3 = shots still waiting to be approved).
+- direct: music → beats → plan → storyboard → videos (text-to-video) → assemble;
+  its shots are approved at build time, so there is no gate.
+
+Two files carry the run. state.json tracks step completion and spend;
+storyboard.json owns every per-shot prompt, candidate, choice and clip from the
+plan step onwards — the runner reads prompts from it and never re-derives them.
+Both are written after each unit of work, so an interrupt resumes per shot.
+
+Exit codes: 0 done, 3 awaiting review, 4 budget exceeded.
 """
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import asdict
 from pathlib import Path
 
 from . import assemble as asm
-from . import beats, generate, judge
-from .config import DISCOUNT_DEADLINE, PRICES, fal_key
+from . import beats, generate, judge, storyboard
+from .config import fal_key
 from .fal import DryRunClient, FalClient, get_balance
 from .job import BudgetExceeded, JobSpec, RunState, load_job
-from .promptcraft import image_prompt, lint, video_prompt
+from .promptcraft import lint
 
 LIBRARY = Path(__file__).resolve().parents[2] / "library" / "prompts.jsonl"
 
@@ -36,6 +44,30 @@ def estimate_total(spec: JobSpec) -> float:
     if spec.flow == "image-first":
         total += generate.est_image(spec.size, spec.image_quality, n * spec.n_variants)
     return round(total, 3)
+
+
+def _next_attempt(assets: Path, index: int) -> int:
+    """Every keyframe regeneration writes to fresh filenames (kf_<shot>_a<n>_<v>),
+    so nothing viewing this run — dashboard, browser cache — can show a stale
+    candidate after a redo."""
+    seen = [int(m.group(1)) for p in assets.glob(f"kf_{index}_a*_*.png")
+            if (m := re.fullmatch(rf"kf_{index}_a(\d+)_\d+\.png", p.name))]
+    return max(seen, default=0) + 1
+
+
+def _record_winners(state: RunState, spec: JobSpec, sb: dict) -> None:
+    """Approved image-first picks feed the shared prompt bank, once per pick."""
+    logged = state.data.setdefault("prompt_bank", {})
+    for s in sb["shots"]:
+        if s.get("chosen") is None:
+            continue
+        chosen = s["candidates"][s["chosen"]]
+        if logged.get(str(s["index"])) == chosen:
+            continue
+        judge.record_winner(LIBRARY, {"job": spec.name, "style": spec.style,
+                                      "prompt": s["image_prompt"], "chosen": chosen})
+        logged[str(s["index"])] = chosen
+    state.save()
 
 
 def run_job(spec: JobSpec, workdir: Path, client, auto: bool,
@@ -82,93 +114,111 @@ def run_job(spec: JobSpec, workdir: Path, client, auto: bool,
     plan = state.done("plan")
     briefs = [spec.shots[s["index"] % len(spec.shots)] for s in plan]
 
+    # 4. storyboard: prompts + per-shot estimates, visible before anything renders.
+    #    Written once; from here on it is the source of truth and an existing one
+    #    is never overwritten — it holds the edits made between runs.
+    sb = storyboard.load(workdir)
+    if sb is None:
+        sb = storyboard.build(spec, plan, briefs)
+        # A run that already rendered clips (one started before this file
+        # existed) adopts them, so nothing paid for is generated twice.
+        for shot, clip in zip(sb["shots"], state.done("videos") or []):
+            if clip and Path(clip).exists():
+                shot["video"], shot["status"] = clip, "done"
+        storyboard.save(workdir, sb)
+        log(f"storyboard -> {storyboard.path(workdir)} ({len(sb['shots'])} shots)")
+
     if spec.flow == "image-first":
-        # 4. keyframe candidates per shot
-        if not state.done("keyframes"):
-            keyframes = []
-            for s, brief in zip(plan, briefs):
-                prompt = image_prompt(brief, spec.style)
-                if bad := lint(prompt):
-                    raise SystemExit(f"prompt lint failed for shot {s['index']}: banned words {bad}")
-                candidates = []
-                for v in range(spec.n_variants):
-                    state.spend(generate.est_image(spec.size, spec.image_quality),
-                                spec.budget_usd, f"keyframe {s['index']}v{v}")
-                    p = generate.gen_image(client, prompt, spec.size,
-                                           assets / f"kf_{s['index']}_{v}.png",
-                                           variant=v, quality=spec.image_quality)
-                    candidates.append(str(p))
-                keyframes.append({"index": s["index"], "prompt": prompt,
-                                  "candidates": candidates})
-            state.mark("keyframes", keyframes)
-            log(f"keyframes: {sum(len(k['candidates']) for k in keyframes)} candidates")
+        # 5. keyframe candidates, per shot ("planned" = new, "redo" = prompt edited)
+        for shot in [s for s in sb["shots"] if s["status"] in ("planned", "redo")]:
+            i = shot["index"]
+            if bad := lint(shot["image_prompt"]):
+                raise SystemExit(f"prompt lint failed for shot {i}: banned words {bad}")
+            attempt = _next_attempt(assets, i)
+            candidates = []
+            for v in range(spec.n_variants):
+                state.spend(generate.est_image(spec.size, spec.image_quality),
+                            spec.budget_usd, f"keyframe {i}v{v}")
+                candidates.append(str(generate.gen_image(
+                    client, shot["image_prompt"], spec.size,
+                    assets / f"kf_{i}_a{attempt}_{v}.png",
+                    variant=(attempt - 1) * spec.n_variants + v,
+                    quality=spec.image_quality)))
+            shot["candidates"] = candidates
+            shot["chosen"] = None          # a redo's old pick no longer exists
+            shot["status"] = "images_ready"
+            if shot["video"]:              # redo after rendering: that clip is void
+                shot["video"] = None
+                state.clear("videos")
+                state.clear("assemble")
+            storyboard.save(workdir, sb)   # per shot, so an interrupt resumes here
+            log(f"keyframes shot {i}: {len(candidates)} candidates (attempt {attempt})")
+        if all(s["candidates"] for s in sb["shots"]):
+            state.mark("keyframes", {"shots": len(sb["shots"]),
+                                     "candidates": sum(len(s["candidates"])
+                                                       for s in sb["shots"])})
 
-        # 5. review gate (attended by default; --auto or dry-run picks first)
-        if not state.done("review"):
-            keyframes = state.done("keyframes")
-            review = judge.load_review(workdir)
-            if review is None:
-                if auto:
-                    review = judge.auto_review(keyframes)
-                else:
-                    req = judge.write_request(workdir, keyframes)
-                    log(f"awaiting review: score candidates per {req}, write review.json, re-run")
-                    return 3
-            revised = [k for k in keyframes
-                       if review.get(str(k["index"]), {}).get("revise_prompt")]
-            if revised:
-                # Regenerate revised shots' keyframes, then review again.
-                for k in revised:
-                    k["prompt"] = review[str(k["index"])]["revise_prompt"]
-                state.mark("keyframes", keyframes)  # keep revised prompts
-                state.clear("review")
-                (workdir / "review.json").unlink()
-                for k in revised:
-                    for v in range(spec.n_variants):
-                        state.spend(generate.est_image(spec.size, spec.image_quality),
-                                    spec.budget_usd, f"revised keyframe {k['index']}v{v}")
-                        generate.gen_image(client, k["prompt"], spec.size,
-                                           assets / f"kf_{k['index']}_{v}.png",
-                                           variant=v, quality=spec.image_quality)
-                log(f"regenerated {len(revised)} revised shots; review again")
-                return 3
-            chosen = {k["index"]: k["candidates"][review[str(k["index"])]["chosen"]]
-                      for k in keyframes}
-            state.mark("review", {str(i): c for i, c in chosen.items()})
-            if not client.dry:  # placeholder prompts must not pollute the prompt bank
-                for k in keyframes:
-                    judge.record_winner(LIBRARY, {"job": spec.name, "style": spec.style,
-                                                  "prompt": k["prompt"],
-                                                  "chosen": chosen[k["index"]]})
+        # 6. approval gate: no video is paid for until every shot is approved
+        if auto:
+            storyboard.auto_approve(sb)
+            storyboard.save(workdir, sb)
+        elif not storyboard.all_approved(sb):
+            pending = [s for s in sb["shots"] if s["status"] not in ("approved", "done")]
+            log(f"awaiting review: {len(pending)}/{len(sb['shots'])} shots not approved ("
+                + ", ".join(f"#{s['index']} {s['status']}" for s in pending) + ")")
+            log(f"  edit {storyboard.path(workdir)} (image_prompt / chosen / status), or")
+            log(f"  uv run reelforge shot {job_file or '<job.yaml>'} "
+                "<index> --chosen <n> --approve   (--redo regenerates that shot), or")
+            log("  pick candidates on the dashboard: uv run reelforge dash")
+            log("then re-run the same command to continue.")
+            return 3
+        if not client.dry:  # placeholder prompts must not pollute the prompt bank
+            _record_winners(state, spec, sb)
 
-    # 6. videos: durations from the beat plan; i2v from chosen keyframes,
-    #    or t2v straight from prompts in the direct flow
-    if not state.done("videos"):
-        chosen = state.done("review") if spec.flow == "image-first" else {}
-        clips = []
-        for s, brief in zip(plan, briefs):
-            prompt = video_prompt(brief, spec.style, on_drop=s["on_drop"])
-            state.spend(generate.est_video(s["gen_seconds"], spec.resolution),
-                        spec.budget_usd, f"video {s['index']}")
-            image = Path(chosen[str(s["index"])]) if chosen else None
-            p = generate.gen_video(client, prompt, s["gen_seconds"], spec.size,
-                                   assets / f"clip_{s['index']}.mp4",
-                                   image_path=image, resolution=spec.resolution,
-                                   variant=s["index"])
-            clips.append(str(p))
+    # 7. videos: durations from the beat plan, prompts from the storyboard;
+    #    i2v from the chosen keyframe, or t2v in the direct flow
+    for shot in sb["shots"]:
+        i = shot["index"]
+        if shot["video"] and Path(shot["video"]).exists():
+            continue
+        image = None
+        if spec.flow == "image-first":
+            if shot["chosen"] is None:
+                raise SystemExit(f"shot {i} is approved without a chosen keyframe")
+            image = Path(shot["candidates"][shot["chosen"]])
+        state.spend(generate.est_video(shot["gen_seconds"], spec.resolution),
+                    spec.budget_usd, f"video {i}")
+        p = generate.gen_video(client, shot["video_prompt"], shot["gen_seconds"],
+                               spec.size, assets / f"clip_{i}.mp4",
+                               image_path=image, resolution=spec.resolution,
+                               variant=i)
+        shot["video"] = str(p)
+        shot["status"] = "done"
+        storyboard.save(workdir, sb)
+        log(f"video shot {i} -> {p}")
+    clips = [s["video"] for s in sb["shots"]]
+    if state.done("videos") != clips:
         state.mark("videos", clips)
-        log(f"videos: {len(clips)} clips")
 
-    # 7. beat-synced assembly
+    # 8. beat-synced assembly
     if not state.done("assemble"):
-        clips = [(Path(c), s["end"] - s["start"])
-                 for c, s in zip(state.done("videos"), plan)]
-        final = asm.assemble(clips, Path(state.done("music")),
+        cuts = [(Path(s["video"]), s["end"] - s["start"]) for s in sb["shots"]]
+        final = asm.assemble(cuts, Path(state.done("music")),
                              workdir / "final.mp4", spec.size)
         state.mark("assemble", str(final))
 
     log(f"DONE  final={state.done('assemble')}  est. cost=${state.data['cost_usd']:.2f}")
     return 0
+
+
+def print_storyboard(sb: dict) -> None:
+    """Compact per-shot view: what each shot is waiting on, at a glance."""
+    print(f"\nstoryboard ({sb['flow']}, {len(sb['shots'])} shots):")
+    for s in sb["shots"]:
+        chosen = s.get("chosen")
+        print(f"  #{s['index']}  {s['status']:<12}"
+              f"  chosen={'-' if chosen is None else chosen}"
+              f"  video={'yes' if s.get('video') else 'no'}")
 
 
 def main(argv=None) -> int:
@@ -179,8 +229,20 @@ def main(argv=None) -> int:
     p_run.add_argument("--dry-run", action="store_true",
                        help="no API calls: synthesize placeholder media")
     p_run.add_argument("--auto", action="store_true",
-                       help="skip the attended review gate (first candidate wins)")
+                       help="skip the approval gate (first candidate wins)")
     p_run.add_argument("--workdir", default="runs", help="output root (default: runs/)")
+    p_shot = sub.add_parser("shot", help="edit one storyboard shot")
+    p_shot.add_argument("job", help="path to job yaml")
+    p_shot.add_argument("index", type=int, help="shot index (0-based)")
+    p_shot.add_argument("--image-prompt", help="replace the keyframe prompt")
+    p_shot.add_argument("--video-prompt", help="replace the video prompt")
+    p_shot.add_argument("--chosen", type=int, help="winning candidate index")
+    p_shot.add_argument("--notes", help="free-text note kept with the shot")
+    g = p_shot.add_mutually_exclusive_group()
+    g.add_argument("--approve", action="store_true", help="mark the shot approved")
+    g.add_argument("--redo", action="store_true",
+                   help="regenerate this shot's keyframes on the next run")
+    p_shot.add_argument("--workdir", default="runs")
     p_status = sub.add_parser("status", help="show a job's run state")
     p_status.add_argument("job", help="path to job yaml")
     p_status.add_argument("--workdir", default="runs")
@@ -206,10 +268,29 @@ def main(argv=None) -> int:
     if args.cmd == "status":
         state = RunState.load(workdir)
         print(json.dumps(state.data, indent=2))
+        if (sb := storyboard.load(workdir)) is not None:
+            print_storyboard(sb)
+        return 0
+    if args.cmd == "shot":
+        fields = {k: v for k, v in (("image_prompt", args.image_prompt),
+                                    ("video_prompt", args.video_prompt),
+                                    ("chosen", args.chosen),
+                                    ("notes", args.notes)) if v is not None}
+        if args.approve:
+            fields["status"] = "approved"
+        if args.redo:
+            fields["status"] = "redo"
+        try:
+            sb = storyboard.update_shot(workdir, args.index, fields)
+        except ValueError as e:
+            print(str(e), file=sys.stderr)
+            return 2
+        print(json.dumps(storyboard.get_shot(sb, args.index), indent=2,
+                         ensure_ascii=False))
         return 0
     client = DryRunClient() if args.dry_run else FalClient(fal_key())
     try:
-        return run_job(spec, workdir, client, auto=args.auto or args.dry_run,
+        return run_job(spec, workdir, client, auto=args.auto,
                        job_file=str(Path(args.job).resolve()))
     except BudgetExceeded as e:
         print(f"STOPPED: {e}", file=sys.stderr)
