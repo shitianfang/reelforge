@@ -1,10 +1,12 @@
 """Thin transport for fal.ai's queue API. No model knowledge lives here."""
 
 import time
+from pathlib import Path
 
 import httpx
 
 QUEUE = "https://queue.fal.run"
+REST = "https://rest.alpha.fal.ai"
 
 
 class FalError(RuntimeError):
@@ -46,6 +48,27 @@ class FalClient:
                 if time.monotonic() > deadline:
                     raise FalError(f"{model_id} timed out after {timeout_s}s ({status_url})")
                 time.sleep(self.poll_s)
+
+    def upload(self, path, content_type: str) -> str:
+        """Local file → fal storage; returns the URL model payloads can use.
+
+        Two-step CDN protocol: initiate answers a short-lived presigned PUT URL
+        plus the final serving URL. The PUT goes without the fal auth header —
+        presigned URLs reject foreign Authorization headers.
+        """
+        with httpx.Client(headers=self._headers, timeout=60) as http:
+            r = http.post(f"{REST}/storage/upload/initiate?storage_type=fal-cdn-v3",
+                          json={"content_type": content_type,
+                                "file_name": Path(path).name})
+            if r.status_code >= 400:
+                raise FalError(f"upload initiate: HTTP {r.status_code}: {r.text[:500]}")
+            j = r.json()
+        with open(path, "rb") as f, httpx.Client(timeout=600) as http:
+            pr = http.put(j["upload_url"], content=f,
+                          headers={"Content-Type": content_type})
+            if pr.status_code >= 400:
+                raise FalError(f"upload PUT: HTTP {pr.status_code}: {pr.text[:300]}")
+        return j["file_url"]
 
     def download(self, url: str, dest) -> None:
         with httpx.Client(timeout=300) as http, open(dest, "wb") as f:

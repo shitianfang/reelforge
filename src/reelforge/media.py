@@ -22,6 +22,33 @@ def probe_duration(path) -> float:
     return float(p.stdout.strip())
 
 
+def probe_size(path) -> tuple[int, int]:
+    p = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0", str(path)],
+        capture_output=True, text=True, check=True)
+    w, h = p.stdout.strip().splitlines()[0].split("x")[:2]
+    return int(w), int(h)
+
+
+def grade(src, dest, *, contrast: float = 1.05, saturation: float = 1.06,
+          sharpen: float = 0.35, vignette: bool = True) -> Path:
+    """The cheap finishing pass that stays local: color, sharpen, vignette.
+
+    Frame interpolation deliberately does NOT belong here — minterpolate-class
+    filters eat gigabytes and once helped OOM a whole host (2026-09-14); that
+    step runs on fal instead (generate.finish_video).
+    """
+    vf = (f"eq=contrast={contrast}:saturation={saturation},"
+          f"unsharp=5:5:{sharpen}:5:5:0.0")
+    if vignette:
+        vf += ",vignette=PI/8"
+    vf += ",format=yuv420p"
+    ff("-i", str(src), "-vf", vf, "-c:v", "libx264", "-preset", "veryfast",
+       "-crf", "18", "-c:a", "aac", str(dest))
+    return Path(dest)
+
+
 # --- dry-run synthesizers ------------------------------------------------
 
 def synth_image(dest: Path, size: tuple[int, int], variant: int) -> Path:

@@ -7,6 +7,7 @@ so the whole pipeline is runnable and testable without keys.
 
 import base64
 import math
+import shutil
 from pathlib import Path
 
 from . import media
@@ -110,6 +111,35 @@ def gen_music(client, prompt: str, seconds: int, dest: Path, lyrics: str = "",
                    "duration": seconds}
     out = client.run(m["endpoint"], payload)
     client.download(_first_url(out, "audio", "audios"), dest)
+    return dest
+
+
+def finish_video(client, src: Path, dest: Path, *, target_fps: int | None = 60,
+                 upscale: float = 1.0, model_id: str = "video_finish",
+                 charge=None) -> Path:
+    """Finishing on fal (Topaz): frame interpolation and/or upscale.
+
+    The GPU-heavy step stays off this machine on purpose — a local minterpolate
+    run helped OOM a whole host (2026-09-14). `charge(usd, what)` is called with
+    the estimate BEFORE any money is spent; pass a global_charge wrapper so the
+    machine-wide cap applies (money-path rule).
+    """
+    if client.dry:
+        shutil.copyfile(src, dest)
+        return dest
+    m = get_model(model_id)
+    dur = media.probe_duration(src)
+    _, h = media.probe_size(src)
+    est = est_for(model_id, height=int(h * upscale), duration=math.ceil(dur),
+                  fps=target_fps or 0)
+    if charge is not None:
+        charge(est, f"finish {Path(src).name} → {target_fps or 'same'}fps ×{upscale:g}")
+    payload = {"video_url": client.upload(src, "video/mp4"),
+               "upscale_factor": upscale, "H264_output": True}
+    if target_fps:
+        payload["target_fps"] = target_fps
+    out = client.run(m["endpoint"], payload, timeout_s=3600)
+    client.download(_first_url(out, "video"), dest)
     return dest
 
 

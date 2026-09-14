@@ -106,6 +106,14 @@ CATALOG = [
      "pros": "叙事连贯性强",
      "cons": "贵、排队、审核严",
      "usage": "长叙事再考虑；暂未接入"},
+    # ---- finishing (post) --------------------------------------------------
+    {"id": "video_finish", "kind": "finish", "family": "topaz", "selectable": False,
+     "endpoint": "fal-ai/topaz/upscale/video", "tier": "后期",
+     "label": "Topaz Video（插帧/放大）",
+     "price": "输出每秒：≤720p $0.01 · ≤1080p $0.02 · 更高 $0.08；60fps 输出价格×2",
+     "pros": "GPU 插帧到 60fps，质量远好于本机 minterpolate，重活不占本机内存",
+     "cons": "按输出时长计费",
+     "usage": "reelforge finish <in> <out>：成片的 60fps 收尾（CLI 专用，不进 playground）"},
     # ---- music / audio ----------------------------------------------------
     {"id": "music", "kind": "music", "family": "mmx_music", "selectable": True,
      "endpoint": "minimax/music-3", "tier": "性价比王",
@@ -143,7 +151,7 @@ def get_model(model_id: str) -> dict:
 
 
 def est_for(model_id: str, *, width: int = 0, height: int = 0,
-            duration: int = 0, resolution: str = "768P") -> float:
+            duration: int = 0, resolution: str = "768P", fps: int = 0) -> float:
     """USD estimate for one generation; selectable models only."""
     m = get_model(model_id)
     fam = m["family"]
@@ -163,6 +171,10 @@ def est_for(model_id: str, *, width: int = 0, height: int = 0,
         tokens = w * h * 24 * max(4, min(max_s, duration)) / 1024
         # 1.5 Pro: $2.4/M tokens with audio; 2.5: $0.0214/1K tokens
         return tokens / 1_000_000 * 2.4 if fam == "seedance" else tokens * 0.0000214
+    if fam == "topaz":
+        # billed per OUTPUT second by output height; 60fps output doubles it
+        per_s = 0.01 if height <= 720 else (0.02 if height <= 1080 else 0.08)
+        return per_s * duration * (2 if fps >= 60 else 1)
     if fam == "mmx_music":
         return 0.002 * duration
     if fam == "el_music":

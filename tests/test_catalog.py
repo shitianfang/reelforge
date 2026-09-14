@@ -7,7 +7,7 @@ def test_catalog_invariants():
     ids = [m["id"] for m in CATALOG]
     assert len(ids) == len(set(ids))
     for m in CATALOG:
-        assert m["kind"] in ("image", "video", "music", "audio")
+        assert m["kind"] in ("image", "video", "music", "audio", "finish")
         for field in ("label", "endpoint", "price", "pros", "cons", "usage", "tier"):
             assert m.get(field), f"{m['id']} missing {field}"
         if m["selectable"]:

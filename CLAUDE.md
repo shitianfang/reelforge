@@ -1,6 +1,6 @@
 Layout: src/reelforge/{runner,job,beats,promptcraft,storyboard,judge,generate,assemble,media,fal,config,dashboard}.py — pipeline steps in runner.py docstring; storyboard.py owns per-shot prompts/candidates/choices (single edit endpoint: update_shot); judge.py is only the prompt bank; generate.py is the only provider-aware file; endpoint ids/prices live in config.py only; dashboard.html is the whole UI.
 
-Commands: `uv run pytest` (no keys); `uv run reelforge run <job.yaml> --dry-run`; `uv run reelforge dash` (port 7799); live runs need FAL_KEY in .env (gitignored — never commit it).
+Commands: `uv run pytest` (no keys); `uv run reelforge run <job.yaml> --dry-run`; `uv run reelforge dash` (port 7799); `uv run reelforge finish <in> <out> [--fps 60]` (local grade + fal Topaz GPU interpolation — never run minterpolate-class ffmpeg locally, it OOMed a host 2026-09-14); live runs need FAL_KEY in .env (gitignored — never commit it).
 
 Creative work (planning jobs, writing shot lists, judging keyframes/clips): load the `director` skill first.
 

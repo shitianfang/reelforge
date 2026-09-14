@@ -23,10 +23,10 @@ from dataclasses import asdict
 from pathlib import Path
 
 from . import assemble as asm
-from . import beats, generate, judge, storyboard
+from . import beats, generate, judge, media, storyboard
 from .config import fal_key
 from .fal import DryRunClient, FalClient, get_balance
-from .job import BudgetExceeded, JobSpec, RunState, load_job
+from .job import BudgetExceeded, JobSpec, RunState, global_charge, load_job
 from .promptcraft import lint
 
 LIBRARY = Path(__file__).resolve().parents[2] / "library" / "prompts.jsonl"
@@ -246,6 +246,21 @@ def main(argv=None) -> int:
     p_status = sub.add_parser("status", help="show a job's run state")
     p_status.add_argument("job", help="path to job yaml")
     p_status.add_argument("--workdir", default="runs")
+    p_fin = sub.add_parser(
+        "finish", help="finish a video: local color grade + fal GPU frame "
+                       "interpolation (Topaz) — heavy work stays off this machine")
+    p_fin.add_argument("input", help="source video")
+    p_fin.add_argument("output", help="finished video path (.mp4)")
+    p_fin.add_argument("--fps", type=int, default=60,
+                       help="target fps via GPU interpolation (0 = keep fps)")
+    p_fin.add_argument("--upscale", type=float, default=1.0,
+                       help="upscale factor 1–4 (default 1: no upscale)")
+    p_fin.add_argument("--no-grade", action="store_true",
+                       help="skip the local color/sharpen/vignette pass")
+    p_fin.add_argument("--dry-run", action="store_true",
+                       help="no API calls: grade locally, copy for the fal step")
+    p_fin.add_argument("--workdir", default="runs",
+                       help="ledger/cap root (default: runs/)")
     sub.add_parser("balance", help="print fal.ai account balance")
     p_dash = sub.add_parser("dash", help="serve the observation dashboard")
     p_dash.add_argument("--port", type=int, default=7799)
@@ -258,6 +273,31 @@ def main(argv=None) -> int:
     if args.cmd == "balance":
         b = get_balance(fal_key())
         print(f"${b:.2f}" if b is not None else "balance unavailable")
+        return 0
+    if args.cmd == "finish":
+        src, dest = Path(args.input), Path(args.output)
+        if not src.exists():
+            print(f"no such file: {src}", file=sys.stderr)
+            return 2
+        client = DryRunClient() if args.dry_run else FalClient(fal_key())
+        staged = src
+        if not args.no_grade:
+            staged = dest.with_suffix(".graded.mp4")
+            media.grade(src, staged)
+        def charge(usd: float, what: str) -> None:
+            global_charge(Path(args.workdir), "finish", usd, what)
+            print(f"est ${usd:.2f} — {what}")
+        try:
+            generate.finish_video(client, staged, dest, charge=charge,
+                                  target_fps=args.fps or None,
+                                  upscale=args.upscale)
+        except BudgetExceeded as e:
+            print(f"STOPPED: {e}", file=sys.stderr)
+            return 4
+        finally:
+            if staged != src:
+                staged.unlink(missing_ok=True)
+        print(dest)
         return 0
     if args.cmd == "dash":
         from .dashboard import serve
