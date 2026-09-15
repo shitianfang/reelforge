@@ -4,7 +4,8 @@ what the playground can run, and what each call is estimated to cost.
 `selectable` entries can be generated from the playground and MUST carry a
 real price estimator; display-only rows (selectable=False) are informational
 until an adapter + verified price is added. Endpoint slugs verified against
-fal's public OpenAPI on 2026-09-12; H3-family discount ends 2026-09-14 (x4).
+fal's public OpenAPI on 2026-09-12; the H3-family launch discount was announced
+to end 2026-09-14 but was still being billed on 2026-09-15 (see config.PRICES).
 """
 
 H3_TURBO_PRICE = {"480P": 0.00625, "768P": 0.01, "1080P": 0.02}

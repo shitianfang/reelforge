@@ -35,11 +35,14 @@ PRICES = {
     "image_fast_per_mp": 0.005,
     "image_high": 0.035,
     "music_per_s": 0.002,
-    # H3 Max Turbo per output second, by resolution — 75% LAUNCH DISCOUNT,
-    # ends 2026-09-14; after that: 480P 0.025 / 768P 0.04 / 1080P 0.08.
+    # H3 Max Turbo per output second, by resolution — 75% LAUNCH DISCOUNT.
+    # fal's page said it ends 2026-09-14, but a 6s 768P i2v on 2026-09-15 still
+    # billed $0.06 (balance delta), i.e. the discounted $0.01/s — so these rates
+    # are live past the announced date. Undiscounted: 480P 0.025 / 768P 0.04 /
+    # 1080P 0.08; re-measure a clip's balance delta before switching them.
     "video_per_s": {"480P": 0.00625, "768P": 0.01, "1080P": 0.02},
 }
-DISCOUNT_DEADLINE = "2026-09-14"
+DISCOUNT_DEADLINE = "2026-09-14"  # announced; still discounted when measured 2026-09-15
 
 # Seedream 5 Lite rejects small canvases: total pixels must be >= ~2560x1440.
 IMAGE_HIGH_MIN_PIXELS = 2560 * 1440
